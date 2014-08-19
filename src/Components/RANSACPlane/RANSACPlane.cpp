@@ -18,7 +18,7 @@ namespace Processors {
 namespace RANSACPlane {
 
 RANSACPlane::RANSACPlane(const std::string & name) :
-		Base::Component(name)  {
+		Base::Component(name) {
 
 }
 
@@ -27,9 +27,9 @@ RANSACPlane::~RANSACPlane() {
 
 void RANSACPlane::prepareInterface() {
 	// Register data streams, events and event handlers HERE!
-registerStream("in_pcl", &in_pcl);
-registerStream("out_outliers", &out_outliers);
-registerStream("out_inliers", &out_inliers);
+	registerStream("in_pcl", &in_pcl);
+	registerStream("out_outliers", &out_outliers);
+	registerStream("out_inliers", &out_inliers);
 	// Register handlers
 	h_ransac.setup(boost::bind(&RANSACPlane::ransac, this));
 	registerHandler("ransac", &h_ransac);
@@ -56,62 +56,48 @@ bool RANSACPlane::onStart() {
 
 void RANSACPlane::ransac() {
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = in_pcl.read();
-	
-  pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
-  pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
-  // Create the segmentation object
-  pcl::SACSegmentation<pcl::PointXYZRGB> seg;
-  // Optional
-  seg.setOptimizeCoefficients (true);
-  // Mandatory
-  seg.setModelType (pcl::SACMODEL_PLANE);
-  seg.setMethodType (pcl::SAC_RANSAC);
-  seg.setDistanceThreshold (0.01);
 
-  seg.setInputCloud (cloud);
-  seg.segment (*inliers, *coefficients);
+	pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+	pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+	// Create the segmentation object
+	pcl::SACSegmentation<pcl::PointXYZRGB> seg;
+	// Optional
+	seg.setOptimizeCoefficients(true);
+	// Mandatory
+	seg.setModelType(pcl::SACMODEL_PLANE);
+	seg.setMethodType(pcl::SAC_RANSAC);
+	seg.setDistanceThreshold(0.01);
 
-  if (inliers->indices.size () == 0)
-  {
-    //PCL_ERROR ("Could not estimate a planar model for the given dataset.");
-    cout<<"Could not estimate a planar model for the given dataset."<<endl;
-  }
-//info
-  std::cout << "Model coefficients: " << coefficients->values[0] << " " 
-                                      << coefficients->values[1] << " "
-                                      << coefficients->values[2] << " " 
-                                      << coefficients->values[3] << std::endl;
+	seg.setInputCloud(cloud);
+	seg.segment(*inliers, *coefficients);
 
-  std::cout << "Model inliers: " << inliers->indices.size () << std::endl;
-//  for (size_t i = 0; i < inliers->indices.size (); ++i)
-//    std::cout << inliers->indices[i] << "    " << cloud->points[inliers->indices[i]].x << " "
-//                                               << cloud->points[inliers->indices[i]].y << " "
-//                                               << cloud->points[inliers->indices[i]].z << std::endl;	
-//////////////////////////
+	if (inliers->indices.size() == 0) {
+		CLOG(LERROR) << "Could not estimate a planar model for the given dataset.";
+	}
 
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_inliers (new pcl::PointCloud<pcl::PointXYZRGB> ());
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_outliers (new pcl::PointCloud<pcl::PointXYZRGB> ());
+	CLOG(LINFO) << "Model coefficients: " << coefficients->values[0] << " "
+			<< coefficients->values[1] << " " << coefficients->values[2] << " "
+			<< coefficients->values[3];
 
-    pcl::ExtractIndices<pcl::PointXYZRGB> extract;
-    extract.setInputCloud (cloud);
-    extract.setIndices (inliers);
-    extract.setNegative (false);
+	CLOG(LINFO) << "Model inliers: " << inliers->indices.size();
 
-    extract.filter (*cloud_inliers);
-    //std::cout << "PointCloud representing the planar component: " << cloud_inliers->points.size () << " data points." << std::endl;
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_inliers(new pcl::PointCloud<pcl::PointXYZRGB>());
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_outliers(new pcl::PointCloud<pcl::PointXYZRGB>());
 
-    // Remove the planar inliers, extract the rest
-    extract.setNegative (true);
-    extract.filter (*cloud_outliers);
-    //*cloud_filtered = *cloud_f;
+	pcl::ExtractIndices<pcl::PointXYZRGB> extract;
+	extract.setInputCloud(cloud);
+	extract.setIndices(inliers);
+	extract.setNegative(false);
 
+	extract.filter(*cloud_inliers);
 
+	// Remove the planar inliers, extract the rest
+	extract.setNegative(true);
+	extract.filter(*cloud_outliers);
 
-out_outliers.write(cloud_outliers);
-out_inliers.write(cloud_inliers);
+	out_outliers.write(cloud_outliers);
+	out_inliers.write(cloud_inliers);
 }
-
-
 
 } //: namespace RANSACPlane
 } //: namespace Processors

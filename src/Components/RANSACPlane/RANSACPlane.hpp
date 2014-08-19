@@ -78,17 +78,15 @@ protected:
 	bool onStop();
 
 
-// Input data streams
+	// Input data streams
+	Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZRGB>::Ptr > in_pcl;
 
-		Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZRGB>::Ptr > in_pcl;
+	// Output data streams
+	Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> out_outliers;
+	Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> out_inliers;
 
-// Output data streams
-
-		Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> out_outliers;
-		Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> out_inliers;
 	// Handlers
 	Base::EventHandler2 h_ransac;
-
 	
 	// Handlers
 	void ransac();

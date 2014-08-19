@@ -1,11 +1,11 @@
 /*!
  * \file
  * \brief 
- * \author Michal Laszkowski
+ * \author Maciej
  */
 
-#ifndef PCDWRITER_HPP_
-#define PCDWRITER_HPP_
+#ifndef CLUSTERING_HPP_
+#define CLUSTERING_HPP_
 
 #include "Component_Aux.hpp"
 #include "Component.hpp"
@@ -16,28 +16,26 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
-//#include <Types/PointXYZSIFT.hpp>
-
 namespace Processors {
-namespace PCDWriter {
+namespace Clustering {
 
 /*!
- * \class PCDWrite
- * \brief PCDWrite processor class.
+ * \class Clustering
+ * \brief Clustering processor class.
  *
- * PCDWrite processor.
+ * 
  */
-class PCDWriter: public Base::Component {
+class Clustering: public Base::Component {
 public:
 	/*!
 	 * Constructor.
 	 */
-	PCDWriter(const std::string & name = "PCDWriter");
+	Clustering(const std::string & name = "Clustering");
 
 	/*!
 	 * Destructor
 	 */
-	virtual ~PCDWriter();
+	virtual ~Clustering();
 
 	/*!
 	 * Prepare components interface (register streams and handlers).
@@ -69,30 +67,30 @@ protected:
 	bool onStop();
 
 
-// Input data streams
-        Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZ>::Ptr > in_cloud_xyz;
-		Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZRGB>::Ptr > in_cloud_xyzrgb;
-// Output data streams
+	// Input data streams
+	Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> in_cloud_xyzrgb;
+
+	// Output data streams
+	Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> out_segments;
+	Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> out_colored;
 
 	// Handlers
-    Base::EventHandler2 h_Write_xyz;
-    Base::EventHandler2 h_Write_xyzrgb;
-	
-	Base::Property<std::string> filename;
-    Base::Property<bool> binary;
+	Base::EventHandler2 h_onNewData;
+
+	// Properties
+
 	
 	// Handlers
-    void Write_xyz();
-    void Write_xyzrgb();
+	void onNewData();
 
 };
 
-} //: namespace PCDWrite
+} //: namespace Clustering
 } //: namespace Processors
 
 /*
  * Register processor component.
  */
-REGISTER_COMPONENT("PCDWriter", Processors::PCDWriter::PCDWriter)
+REGISTER_COMPONENT("Clustering", Processors::Clustering::Clustering)
 
-#endif /* PCDWRITER_HPP_ */
+#endif /* CLUSTERING_HPP_ */

@@ -25,6 +25,9 @@
 		<Subtask name="Visualisation">
 			<Executor name="Exec2" period="0.01">
 				<Component name="Window" type="PCL:CloudViewer" priority="1" bump="0">
+					<param name="background_r">255</param>
+					<param name="background_g">0</param>
+					<param name="background_b">0</param>
 				</Component>
 			</Executor>
 		</Subtask>

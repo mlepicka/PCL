@@ -5,7 +5,7 @@ SET(CMAKE_INCLUDE_CURRENT_DIR ON)
 FILE(GLOB files *.cpp)
 
 # Find required packages
-find_package(PCL 1.7.1 REQUIRED)
+find_package(PCL 1.7.0 REQUIRED)
 
 # Create an executable file from sources:
 ADD_LIBRARY(SHOT SHARED ${files})

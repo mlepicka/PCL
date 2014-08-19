@@ -8,9 +8,9 @@ FILE(GLOB files *.cpp)
 
 
 # Create an executable file from sources:
-ADD_LIBRARY(PCDWriter SHARED ${files})
+ADD_LIBRARY(FindBoundingBox SHARED ${files})
 
 # Link external libraries
-TARGET_LINK_LIBRARIES(PCDWriter ${DisCODe_LIBRARIES} ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES}
+TARGET_LINK_LIBRARIES(FindBoundingBox ${DisCODe_LIBRARIES} ${PCL_LIBRARIES})
 
-INSTALL_COMPONENT(PCDWriter)
+INSTALL_COMPONENT(FindBoundingBox)

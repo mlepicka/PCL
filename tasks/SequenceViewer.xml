@@ -1,0 +1,78 @@
+<Task>
+	<!-- reference task information -->
+	<Reference>
+		<Author>
+			<name>Marta Łępicka</name>
+			<link></link>
+		</Author>
+
+		<Description>
+			<brief>Visualize point clouds with different options</brief>
+			<full>Options: simple, with normals ... to be continued</full>	
+		</Description>
+	</Reference>
+
+	<!-- task definition -->
+	<Subtasks>
+		<Subtask name="Main">
+			<Executor name="Processing"  period="3">
+				<Component name="SequenceRGB" type="CvBasic:Sequence" priority="1" bump="0">
+					<param name="sequence.directory">/home/maciej/</param>
+					<param name="sequence.pattern">col*.*</param>
+					<param name="mode.loop">0</param>
+					<param name="mode.triggered">0</param>				
+				</Component>
+				<Component name="SequenceDepth" type="CvBasic:Sequence" priority="2" bump="0">
+					<param name="sequence.directory">/home/maciej/</param>
+					<param name="sequence.pattern">dep*.*</param>	
+					<param name="mode.loop">0</param>
+					<param name="mode.triggered">0</param>		
+				</Component>
+				<Component name="CameraInfo" type="CvCoreTypes:CameraInfoProvider" priority="5" bump="0">
+					<param name="camera_matrix">525 0 319.5; 0 525 239.5; 0 0 1</param>
+				</Component>
+				<Component name="Converter" type="PCL:DepthConverter" priority="4" bump="0">
+				</Component>
+				<Component name="RanSaC" type="PCL:RANSACPlane" priority="5" bump="0">
+				</Component>
+				<Component name="Clustering" type="PCL:Clustering" priority="6" bump="1">
+				</Component>
+			</Executor>
+			<Executor name="Visualization" period="0.2">
+				<Component name="WindowPCL" type="PCL:CloudViewer" priority="1" bump="0">
+					<param name="coordinate_system">false</param>
+				</Component>
+				<Component name="WindowPCL2" type="PCL:CloudViewer" priority="2" bump="0">
+					<param name="coordinate_system">false</param>
+				</Component> 
+				<Component name="WindowPCL3" type="PCL:CloudViewer" priority="3" bump="0">
+					<param name="coordinate_system">false</param>
+				</Component>  
+			</Executor>
+		</Subtask>
+	</Subtasks>
+
+	<!-- pipes connecting datastreams -->
+	<DataStreams>
+		<Source name="SequenceRGB.out_img">
+			<sink>Converter.in_color</sink>
+		</Source>
+		<Source name="SequenceDepth.out_img">	
+			<sink>Converter.in_depth</sink>		
+		</Source>
+		<Source name="CameraInfo.out_camera_info">
+			<sink>Converter.in_camera_info</sink>	
+		</Source>
+		<Source name="Converter.out_cloud_xyzrgb">
+			<sink>RanSaC.in_pcl</sink>
+			<sink>WindowPCL.in_cloud_xyzrgb</sink>
+		</Source>
+		<Source name="RanSaC.out_outliers">
+			<sink>Clustering.in_cloud_xyzrgb</sink>
+			<sink>WindowPCL2.in_cloud_xyzrgb</sink>
+		</Source>
+		<Source name="Clustering.out_colored">
+			<sink>WindowPCL3.in_cloud_xyzrgb</sink>
+		</Source>
+	</DataStreams>
+</Task>

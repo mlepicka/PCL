@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Task>
+	<!-- reference task information -->
+	<Reference>
+		<Author>
+			<name>Maciej Stefańczyk</name>
+			<link></link>
+		</Author>
+		
+		<Description>
+			<brief>Simple PCL viewer</brief>
+			<full>Simple PCL viewer, using PCD as source of depth data.</full>	
+		</Description>
+	</Reference>
+	
+	<!-- task definition -->
+	<Subtasks>
+		<Subtask name="Processing">
+			<Executor name="Exec1"  period="0.1">
+                                <Component name="Source" type="PCL:PCDReader" priority="1" bump="0">
+					<param name="filename">/home/mlaszkow/pcd/kakao_test_xyzrgb.pcd</param>					
+				</Component>
+                                <Component name="CenterOfMass" type="PCL:CenterOfMass" priority="2" bump="15">
+                                </Component>
+			</Executor>
+		</Subtask>
+		
+		<Subtask name="Visualisation">
+			<Executor name="Exec2" period="0.01">
+				<Component name="Window" type="PCL:CloudViewer" priority="1" bump="0">
+										<param name="coordinate_system">1</param>
+                                        <param name="background_r">0</param>
+                                        <param name="background_g">0</param>
+                                        <param name="background_b">0</param>
+                                        <param name="bounding_box_r">0.5</param>
+                                        <param name="bounding_box_g">0.5</param>
+                                        <param name="bounding_box_b">0.5</param>
+                                        <param name="point_r">0</param>
+                                        <param name="point_g">255</param>
+                                        <param name="point_b">0</param>
+                                        <param name="point_size">5</param>
+				</Component>
+			</Executor>
+		</Subtask>
+	
+	</Subtasks>
+	
+	<!-- pipes connecting datastreams -->
+	<DataStreams>
+		<Source name="Source.out_cloud_xyzrgb">
+                <sink>CenterOfMass.in_cloud_xyzrgb</sink>
+                    
+		</Source>
+		<Source name="CenterOfMass.out_point">
+				<sink>Window.in_point</sink>
+		</Source>
+		<Source name="CenterOfMass.out_cloud_xyzrgb">
+				<sink>Window.in_cloud_xyzrgb</sink>
+		</Source>
+	</DataStreams>
+</Task>
+
+
+
+

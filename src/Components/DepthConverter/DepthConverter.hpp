@@ -69,28 +69,36 @@ protected:
 	bool onStop();
 
 	// Data streams
-	Base::DataStreamIn<cv::Mat> in_depth;
+    Base::DataStreamIn<cv::Mat> in_depth;
 	Base::DataStreamIn<cv::Mat> in_color;
 	Base::DataStreamIn<cv::Mat> in_mask;
 	Base::DataStreamIn<Types::CameraInfo> in_camera_info;
 	Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZ>::Ptr > out_cloud_xyz;
 	Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZRGB>::Ptr > out_cloud_xyzrgb;
+    Base::DataStreamIn<cv::Mat> in_depth_xyz;
+    Base::DataStreamIn<cv::Mat> in_rgb_stereo;
 
 	// Handlers
 	Base::EventHandler2 h_process_depth;
 	Base::EventHandler2 h_process_depth_mask;
 	Base::EventHandler2 h_process_depth_mask_color;
 	Base::EventHandler2 h_process_depth_color;
-	
-
-	
+    Base::EventHandler2 h_process_depth_xyz;
+    Base::EventHandler2 h_process_depth_xyz_rgb_stereo;
+    Base::EventHandler2 h_process_depth_xyz_mask;
+    Base::EventHandler2 h_process_depth_xyz_rgb_stereo_mask;
 	// Handlers
 	void process_depth_mask();
 	void process_depth();
-	
+
 	void process_depth_mask_color();
 	void process_depth_color();
 	
+    void process_depth_xyz();
+    void process_depth_xyz_rgb_stereo();
+
+    void process_depth_xyz_mask();
+    void process_depth_xyz_rgb_stereo_mask();
 
 	Base::Property<bool> prop_remove_nan;
 };

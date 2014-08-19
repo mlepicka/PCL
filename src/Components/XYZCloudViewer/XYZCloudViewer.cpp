@@ -11,6 +11,10 @@
 #include "Common/Logger.hpp"
 
 #include <boost/bind.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/algorithm/string.hpp>
+
+
 
 namespace Processors {
 namespace XYZCloudViewer {
@@ -88,8 +92,13 @@ bool XYZCloudViewer::onInit() {
 	viewer = new pcl::visualization::PCLVisualizer (title);
 	viewer->initCameraParameters ();
 	// Add visible coortinate system.
-	if(prop_coordinate_system)
-		viewer->addCoordinateSystem (1.0, title, 0);
+	if(prop_coordinate_system) {
+#if PCL_VERSION_COMPARE(>=,1,7,1)
+	    viewer->addCoordinateSystem (1.0, title, 0);
+#else
+	    viewer->addCoordinateSystem (1.0);
+#endif
+	}
 
 	// Add clouds.
 	for (int i = 0; i < count; ++i) {

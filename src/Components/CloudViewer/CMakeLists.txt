@@ -6,7 +6,7 @@ FILE(GLOB files *.cpp)
 
 # Create an executable file from sources:
 ADD_LIBRARY(CloudViewer SHARED ${files})
-FIND_PACKAGE( PCL 1.7.1 REQUIRED )
+FIND_PACKAGE( PCL 1.7.0 REQUIRED )
 
 # Link external libraries
 TARGET_LINK_LIBRARIES(CloudViewer ${DisCODe_LIBRARIES} ${PCL_LIBRARIES})

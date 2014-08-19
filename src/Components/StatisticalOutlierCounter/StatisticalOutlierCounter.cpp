@@ -1,13 +1,13 @@
 /*!
  * \file
  * \brief
- * \author Micha Laszkowski
+ * \author Mikolaj Kamionka
  */
 
 #include <memory>
 #include <string>
 
-#include "StatisticalOutlierRemoval.hpp"
+#include "StatisticalOutlierCounter.hpp"
 #include "Common/Logger.hpp"
 
 #include <boost/bind.hpp>
@@ -15,9 +15,9 @@
 #include <pcl/filters/statistical_outlier_removal.h>
 
 namespace Processors {
-namespace StatisticalOutlierRemoval {
+namespace StatisticalOutlierCounter {
 
-StatisticalOutlierRemoval::StatisticalOutlierRemoval(const std::string & name) :
+StatisticalOutlierCounter::StatisticalOutlierCounter(const std::string & name) :
 		Base::Component(name) , 
 		negative("negative", false),
 		StddevMulThresh("StddevMulThresh", 1.0),
@@ -28,45 +28,45 @@ StatisticalOutlierRemoval::StatisticalOutlierRemoval(const std::string & name) :
 
 }
 
-StatisticalOutlierRemoval::~StatisticalOutlierRemoval() {
+StatisticalOutlierCounter::~StatisticalOutlierCounter() {
 }
 
-void StatisticalOutlierRemoval::prepareInterface() {
+void StatisticalOutlierCounter::prepareInterface() {
 	// Register data streams, events and event handlers HERE!
 	registerStream("in_cloud_xyzrgb", &in_cloud_xyzrgb);
 	registerStream("out_cloud_xyzrgb", &out_cloud_xyzrgb);
 	registerStream("in_cloud_xyz", &in_cloud_xyz);
 	registerStream("out_cloud_xyz", &out_cloud_xyz);
 	// Register handlers
-	h_filter_xyzrgb.setup(boost::bind(&StatisticalOutlierRemoval::filter_xyzrgb, this));
-	registerHandler("filter_xyzrgb", &h_filter_xyzrgb);
+	h_count_xyzrgb.setup(boost::bind(&StatisticalOutlierCounter::count_xyzrgb, this));
+	registerHandler("filter_xyzrgb", &h_count_xyzrgb);
 	addDependency("filter_xyzrgb", &in_cloud_xyzrgb);
 	
-	h_filter_xyz.setup(boost::bind(&StatisticalOutlierRemoval::filter_xyz, this));
-	registerHandler("filter_xyz", &h_filter_xyz);
+	h_count_xyz.setup(boost::bind(&StatisticalOutlierCounter::count_xyz, this));
+	registerHandler("filter_xyz", &h_count_xyz);
 	addDependency("filter_xyz", &in_cloud_xyz);
 
 }
 
-bool StatisticalOutlierRemoval::onInit() {
+bool StatisticalOutlierCounter::onInit() {
 
 	return true;
 }
 
-bool StatisticalOutlierRemoval::onFinish() {
+bool StatisticalOutlierCounter::onFinish() {
 	return true;
 }
 
-bool StatisticalOutlierRemoval::onStop() {
+bool StatisticalOutlierCounter::onStop() {
 	return true;
 }
 
-bool StatisticalOutlierRemoval::onStart() {
+bool StatisticalOutlierCounter::onStart() {
 	return true;
 }
 
-void StatisticalOutlierRemoval::filter_xyzrgb() {
-		CLOG(LINFO) << "StatisticalOutlierRemoval::filter_xyzrgb";
+void StatisticalOutlierCounter::count_xyzrgb() {
+		CLOG(LINFO) << "StatisticalOutlierCounter::filter_xyzrgb";
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = in_cloud_xyzrgb.read();
 	pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
 	sor.setInputCloud (cloud);
@@ -74,22 +74,27 @@ void StatisticalOutlierRemoval::filter_xyzrgb() {
 	sor.setStddevMulThresh (StddevMulThresh);
 	sor.setNegative (negative);
 	sor.filter (*cloud);
+	pcl::IndicesConstPtr indices = 	sor.getRemovedIndices ();
+	CLOG(LINFO) << "outliners: " << indices->size();
 	out_cloud_xyzrgb.write(cloud);
 }
 
-void StatisticalOutlierRemoval::filter_xyz() {
-	CLOG(LINFO) << "StatisticalOutlierRemoval::filter_xyzrgb";
+void StatisticalOutlierCounter::count_xyz() {
+	CLOG(LINFO) << "StatisticalOutlierCounter::filter_xyzrgb";
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = in_cloud_xyz.read();
 	pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
 	sor.setInputCloud (cloud);
 	sor.setMeanK (MeanK);
 	sor.setStddevMulThresh (StddevMulThresh);
 	sor.setNegative (negative);
+	
 	sor.filter (*cloud);
+	pcl::IndicesConstPtr indices = 	sor.getRemovedIndices ();
+	CLOG(LINFO) << "outliners: " << indices->size();
 	out_cloud_xyz.write(cloud);
 }
 
 
 
-} //: namespace StatisticalOutlierRemoval
+} //: namespace StatisticalOutlierCounter
 } //: namespace Processors

@@ -1,11 +1,11 @@
 /*!
  * \file
  * \brief 
- * \author Micha Laszkowski
+ * \author Michal Laszkowski
  */
 
-#ifndef VOXELGRID_HPP_
-#define VOXELGRID_HPP_
+#ifndef CENTEROFMASS_HPP_
+#define CENTEROFMASS_HPP_
 
 #include "Component_Aux.hpp"
 #include "Component.hpp"
@@ -13,38 +13,37 @@
 #include "Property.hpp"
 #include "EventHandler2.hpp"
 
-//#include <Types/PointXYZSIFT.hpp>
-#include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
 
-
+#include <pcl/common/common.h>
+#include <pcl/common/transforms.h>
 namespace Processors {
-namespace VoxelGrid {
+namespace CenterOfMass {
 
 /*!
- * \class VoxelGrid
- * \brief VoxelGrid processor class.
+ * \class CenterOfMass
+ * \brief CenterOfMass processor class.
  *
- * VoxelGrid processor.
+ * 
  */
-class VoxelGrid: public Base::Component {
+class CenterOfMass: public Base::Component {
 public:
 	/*!
 	 * Constructor.
 	 */
-	VoxelGrid(const std::string & name = "VoxelGrid");
+	CenterOfMass(const std::string & name = "CenterOfMass");
 
 	/*!
 	 * Destructor
 	 */
-	virtual ~VoxelGrid();
+	virtual ~CenterOfMass();
 
 	/*!
 	 * Prepare components interface (register streams and handlers).
 	 * At this point, all properties are already initialized and loaded to 
 	 * values set in config file.
 	 */
-
 	void prepareInterface();
 
 protected:
@@ -71,32 +70,32 @@ protected:
 
 
 	// Input data streams
+	Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZ>::Ptr> in_cloud_xyz;
 	Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> in_cloud_xyzrgb;
-	Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr> in_cloud_xyzrgb_normal;
-
 	// Output data streams
+	Base::DataStreamOut<Eigen::Vector4f> out_centroid;
+	Base::DataStreamOut<pcl::PointXYZ> out_point;
+	Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZ>::Ptr> out_cloud_xyz;
 	Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> out_cloud_xyzrgb;
-	Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr> out_cloud_xyzrgb_normal;
-
 	// Handlers
-	Base::EventHandler2 h_filter;
-	Base::EventHandler2 h_filter_normal;
-	Base::Property<float> x;
-	Base::Property<float> y;
-	Base::Property<float> z;
+	Base::EventHandler2 h_compute;
+	Base::EventHandler2 h_compute_xyzrgb;
+
+	// Properties
+
 	
 	// Handlers
-	void filter();
-	void filter_normal();
+	void compute();
+	void compute_xyzrgb();
 
 };
 
-} //: namespace VoxelGrid
+} //: namespace CenterOfMass
 } //: namespace Processors
 
 /*
  * Register processor component.
  */
-REGISTER_COMPONENT("VoxelGrid", Processors::VoxelGrid::VoxelGrid)
+REGISTER_COMPONENT("CenterOfMass", Processors::CenterOfMass::CenterOfMass)
 
-#endif /* VOXELGRID_HPP_ */
+#endif /* CENTEROFMASS_HPP_ */

@@ -27,6 +27,12 @@ ADD_COMPONENT(PassThrough)
 
 ADD_COMPONENT(StatisticalOutlierRemoval)
 
+ADD_COMPONENT(StatisticalOutlierCounter)
 
+ADD_COMPONENT(Clustering)
+
+ADD_COMPONENT(FindBoundingBox)
+
+ADD_COMPONENT(CenterOfMass)
 
 ADD_COMPONENT(ClustersViewer)
