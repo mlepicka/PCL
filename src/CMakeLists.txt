@@ -23,6 +23,7 @@ add_definitions(${PCL_DEFINITIONS})
 # Find another DCLs our one depends on
 # Use macro: DISCODE_FIND_DCL(<DCL_NAME>)
 
+DISCODE_FIND_DCL(PCLCoreTypes)
 DISCODE_FIND_DCL(CvCoreTypes)
 
 # ##############################################################################
