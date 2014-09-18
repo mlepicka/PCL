@@ -14,7 +14,6 @@
 #include <EventHandler2.hpp>
 
 #include <Types/CameraInfo.hpp>
-#include <Types/Features.hpp> 
 
 #include <opencv2/core/core.hpp>
 
