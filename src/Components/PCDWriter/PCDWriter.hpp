@@ -67,6 +67,15 @@ protected:
 	 */
 	bool onStop();
 
+    /// Trigger - used for writing cloud XYZ in case of several writers.
+    Base::DataStreamIn<Base::UnitType> in_trigger_xyz;
+
+    /// Trigger - used for writing cloud XYZRGB in case of several writers.
+    Base::DataStreamIn<Base::UnitType> in_trigger_xyzrgb;
+
+    /// Trigger - used for writing cloud XYZSIFT in case of several writers.
+    Base::DataStreamIn<Base::UnitType> in_trigger_xyzsift;
+
 	/// Cloud containing points with Cartesian coordinates (XYZ).
 	Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZ>::Ptr > in_cloud_xyz;
 
@@ -88,6 +97,10 @@ protected:
     void Write_xyz();
     void Write_xyzrgb();
     void Write_xyzsift();
+    void onTriggeredLoadNextCloudXYZ();
+    void onTriggeredLoadNextCloudXYZRGB();
+    void onTriggeredLoadNextCloudXYZSIFT();
+
 
 };
 
