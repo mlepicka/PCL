@@ -29,7 +29,8 @@ CloudViewer::CloudViewer(const std::string & name) :
     prop_point_r("point_r", 0),
     prop_point_g("point_g", 255),
     prop_point_b("point_b", 0),
-    prop_point_size("point_size", 5)
+    prop_point_size("point_size", 5),
+    prop_point_sift_size("point_size", 1)
 
 {
   registerProperty(prop_window_name);
@@ -43,6 +44,7 @@ CloudViewer::CloudViewer(const std::string & name) :
   registerProperty(prop_point_g);
   registerProperty(prop_point_b);
   registerProperty(prop_point_size);
+  registerProperty(prop_point_sift_size);
   
 }
 
@@ -101,6 +103,7 @@ void CloudViewer::prepareInterface() {
 	registerStream("in_cloud_xyz2", &in_cloud_xyz2);
 	registerStream("in_cloud_xyzrgb", &in_cloud_xyzrgb);
 	registerStream("in_cloud_xyzrgb2", &in_cloud_xyzrgb2);
+    registerStream("in_cloud_xyzsift", &in_cloud_xyzsift);
 	registerStream("in_cloud_normals", &in_cloud_normals);
 
     registerStream("in_min_pt", &in_min_pt);
@@ -108,33 +111,29 @@ void CloudViewer::prepareInterface() {
     registerStream("in_point", &in_point);
 
 	// Register handlers
-	h_on_cloud_xyz.setup(boost::bind(&CloudViewer::on_cloud_xyz, this));
-	registerHandler("on_cloud_xyz", &h_on_cloud_xyz);
-	addDependency("on_cloud_xyz", &in_cloud_xyz);
-	h_on_clouds_xyz.setup(boost::bind(&CloudViewer::on_clouds_xyz, this));
-	registerHandler("on_clouds_xyz", &h_on_clouds_xyz);
-	addDependency("on_clouds_xyz", &in_cloud_xyz);
-	addDependency("on_clouds_xyz", &in_cloud_xyz2);
-	h_on_cloud_xyzrgb.setup(boost::bind(&CloudViewer::on_cloud_xyzrgb, this));
-	registerHandler("on_cloud_xyzrgb", &h_on_cloud_xyzrgb);
-	addDependency("on_cloud_xyzrgb", &in_cloud_xyzrgb);
-	h_on_clouds_xyzrgb.setup(boost::bind(&CloudViewer::on_clouds_xyzrgb, this));
-	registerHandler("on_clouds_xyzrgb", &h_on_clouds_xyzrgb);
-	addDependency("on_clouds_xyzrgb", &in_cloud_xyzrgb);
-	addDependency("on_clouds_xyzrgb", &in_cloud_xyzrgb2);
-	h_on_cloud_normals.setup(boost::bind(&CloudViewer::on_cloud_normals, this));
-	registerHandler("on_cloud_normals", &h_on_cloud_normals);
-	addDependency("on_cloud_normals", &in_cloud_normals);
-    h_on_bounding_box.setup(boost::bind(&CloudViewer::on_bounding_box, this));
-    registerHandler("on_bounding_box", &h_on_bounding_box);
+    registerHandler("on_cloud_xyz", boost::bind(&CloudViewer::on_cloud_xyz, this));
+    addDependency("on_cloud_xyz", &in_cloud_xyz);
+    registerHandler("on_cloud_xyzrgb", boost::bind(&CloudViewer::on_cloud_xyzrgb, this));
+    addDependency("on_cloud_xyzrgb", &in_cloud_xyzrgb);
+    registerHandler("on_cloud_xyzsift", boost::bind(&CloudViewer::on_cloud_xyzsift, this));
+    addDependency("on_cloud_xyzsift", &in_cloud_xyzsift);
+    registerHandler("on_clouds_xyz", boost::bind(&CloudViewer::on_clouds_xyz, this));
+    addDependency("on_clouds_xyz", &in_cloud_xyz);
+    addDependency("on_clouds_xyz", &in_cloud_xyz2);
+    registerHandler("on_clouds_xyzrgb", boost::bind(&CloudViewer::on_clouds_xyzrgb, this));
+    addDependency("on_clouds_xyzrgb", &in_cloud_xyzrgb);
+    addDependency("on_clouds_xyzrgb", &in_cloud_xyzrgb2);
+    registerHandler("on_cloud_normals", boost::bind(&CloudViewer::on_cloud_normals, this));
+    addDependency("on_cloud_normals", &in_cloud_normals);
+
+    registerHandler("on_bounding_box", boost::bind(&CloudViewer::on_bounding_box, this));
     addDependency("on_bounding_box", &in_min_pt);
     addDependency("on_bounding_box", &in_max_pt);
-    h_on_point.setup(boost::bind(&CloudViewer::on_point, this));
-    registerHandler("on_point", &h_on_point);
+    registerHandler("on_point", boost::bind(&CloudViewer::on_point, this));
     addDependency("on_point", &in_point);
-	h_on_spin.setup(boost::bind(&CloudViewer::on_spin, this));
-	registerHandler("on_spin", &h_on_spin);
-	addDependency("on_spin", NULL);
+
+    registerHandler("on_spin", boost::bind(&CloudViewer::on_spin, this));
+    addDependency("on_spin", NULL);
 }
 
 bool CloudViewer::onInit() {
@@ -262,6 +261,27 @@ void CloudViewer::on_clouds_xyzrgb() {
 	pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb2 (cloud2);
 	viewer->addPointCloud<pcl::PointXYZRGB> (cloud2, rgb2, "viewcloud2", v2);
 }
+
+void CloudViewer::on_cloud_xyzsift() {
+    CLOG(LTRACE) << "CloudViewer::on_cloud_xyzsift";
+    pcl::PointCloud<PointXYZSIFT>::Ptr cloud = in_cloud_xyzsift.read();
+
+    // Filter the NaN points.
+    std::vector<int> indices;
+    cloud->is_dense = false;
+    pcl::removeNaNFromPointCloud(*cloud, *cloud, indices);
+    viewer->removePointCloud("siftcloud") ;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_xyz(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::copyPointCloud(*cloud,*cloud_xyz);
+    viewer->addPointCloud<pcl::PointXYZ>(cloud_xyz, "siftcloud") ;
+    viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, prop_point_sift_size, "siftcloud");
+    viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR,
+        255,
+        0,
+        0,
+        "siftcloud");
+}
+
 
 void CloudViewer::on_cloud_normals() {
 }
