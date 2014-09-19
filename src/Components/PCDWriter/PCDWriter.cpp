@@ -38,6 +38,9 @@ void PCDWriter::prepareInterface() {
     registerStream("in_cloud_xyz", &in_cloud_xyz);
 	registerStream("in_cloud_xyzrgb", &in_cloud_xyzrgb);
 	registerStream("in_cloud_xyzsift", &in_cloud_xyzsift);
+    registerStream("in_trigger_xyz", &in_trigger_xyz);
+    registerStream("in_trigger_xyzrgb", &in_trigger_xyzrgb);
+    registerStream("in_trigger_xyzsift", &in_trigger_xyzsift);
 
 	// Register handlers - no dependencies.
     registerHandler("Write_xyz", boost::bind(&PCDWriter::Write_xyz, this));
