@@ -49,16 +49,18 @@ CloudViewer::CloudViewer(const std::string & name) :
 
 void CloudViewer::onCSShowClick(const bool & new_show_cs_){
     CLOG(LDEBUG) << "CloudViewer::onCSShowClick show="<<new_show_cs_;
-	if(new_show_cs_) {
+    if(new_show_cs_) {
 #if PCL_VERSION_COMPARE(>=,1,7,1)
-		viewer->addCoordinateSystem (1.0, "ClustersViewer", 0);
+        viewer->addCoordinateSystem (1.0, "CloudViewer", 0);
 #else
 		viewer->addCoordinateSystem (1.0);
 #endif
 	}
 	else {
-#if PCL_VERSION_COMPARE(>=,1,7,1)
-		viewer->removeCoordinateSystem ("ClustersViewer");
+#if PCL_VERSION_COMPARE(>=,1,7,2)
+        viewer->removeCoordinateSystem ("CloudViewer", 0);
+#elif PCL_VERSION_COMPARE(>=,1,7,1)
+        viewer->removeCoordinateSystem ("CloudViewer");
 #else
 		viewer->removeCoordinateSystem (1.0);
 #endif
@@ -180,7 +182,7 @@ bool CloudViewer::onInit() {
 	// Add coordinate system -- different function call depending on the PCL version(!)
 	if(prop_coordinate_system) {
 #if PCL_VERSION_COMPARE(>=,1,7,1)
-		viewer->addCoordinateSystem (1.0, "ClustersViewer", 0);
+        viewer->addCoordinateSystem (1.0, "CloudViewer", 0);
 #else
 		viewer->addCoordinateSystem (1.0);
 #endif

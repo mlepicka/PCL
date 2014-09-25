@@ -16,7 +16,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
-//#include <Types/PointXYZSIFT.hpp>
+#include <Types/PointXYZSIFT.hpp>
 
 namespace Processors {
 namespace PCDReader {
@@ -69,16 +69,23 @@ protected:
 	bool onStop();
 
 
-// Input data streams
 
+	/// Cloud containing points with Cartesian coordinates (XYZ).
+	Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZ>::Ptr > out_cloud_xyz;
 
-// Output data streams
-		Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZ>::Ptr > out_cloud_xyz;
-		Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZRGB>::Ptr > out_cloud_xyzrgb;
-//		Base::DataStreamOut<pcl::PointCloud<PointXYZSIFT>::Ptr > out_cloud_xyzsift;
+	/// Cloud containing points with Cartesian coordinates and colour (XYZ + RGB).
+	Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZRGB>::Ptr > out_cloud_xyzrgb;
+
+	/// Cloud containing points with Cartesian coordinates and SIFT descriptor (XYZ + 128).
+	Base::DataStreamOut<pcl::PointCloud<PointXYZSIFT>::Ptr > out_cloud_xyzsift;
+
+	/// Cloud containing points with Cartesian coordinates with associated normals (XYZ + normal).
+	//Base::DataStreamIn< pcl::PointCloud<pcl::Normal>::Ptr > in_cloud_normals;
+
 	// Handlers
 	Base::EventHandler2 h_Read;
 	Base::Property<std::string> filename;
+	Base::Property<bool> read_on_init;
 
 	
 	// Handlers
