@@ -67,13 +67,16 @@ void PCDReader::Read() {
 	CLOG(LTRACE) << "PCDReader::Read\n";
 	// Try to read the cloud of XYZ points.
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_xyz (new pcl::PointCloud<pcl::PointXYZ>);
+/*
 	if (pcl::io::loadPCDFile<pcl::PointXYZ> (filename, *cloud_xyz) == -1){
 		CLOG(LWARNING) <<"Cannot read PointXYZ cloud from "<<filename;
 	}else{
 		out_cloud_xyz.write(cloud_xyz);
+		CLOG(LINFO) <<"PointXYZ size: "<<cloud_xyz->size();
 		CLOG(LINFO) <<"PointXYZ cloud loaded properly from "<<filename;
 		return;
 	}// else
+*/
 	  
 	// Try to read the cloud of XYZRGB points.
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_xyzrgb (new pcl::PointCloud<pcl::PointXYZRGB>);

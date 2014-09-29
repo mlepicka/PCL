@@ -29,7 +29,9 @@ CloudViewer::CloudViewer(const std::string & name) :
     prop_point_r("point_r", 0),
     prop_point_g("point_g", 255),
     prop_point_b("point_b", 0),
-    prop_point_size("point_size", 5)
+    prop_point_size("point_size", 5),
+	normals_scale("normals.scale", 0.1),
+	normals_level("normals.level", 1)
 
 {
   registerProperty(prop_window_name);
@@ -43,13 +45,15 @@ CloudViewer::CloudViewer(const std::string & name) :
   registerProperty(prop_point_g);
   registerProperty(prop_point_b);
   registerProperty(prop_point_size);
+  registerProperty(normals_scale);
+  registerProperty(normals_level);
   
 }
 
 
 void CloudViewer::onCSShowClick(const bool & new_show_cs_){
     CLOG(LDEBUG) << "CloudViewer::onCSShowClick show="<<new_show_cs_;
-    if(new_show_cs_) {
+/*    if(new_show_cs_) {
 #if PCL_VERSION_COMPARE(>=,1,7,1)
         viewer->addCoordinateSystem (1.0, "CloudViewer", 0);
 #else
@@ -66,7 +70,7 @@ void CloudViewer::onCSShowClick(const bool & new_show_cs_){
 #endif
 	}
 
-	prop_coordinate_system = new_show_cs_;
+	prop_coordinate_system = new_show_cs_;*/
 }
 
 void CloudViewer::onBackgroundColorChange(std::string bcolor_){
@@ -102,6 +106,7 @@ void CloudViewer::prepareInterface() {
 	registerStream("in_cloud_xyzrgb", &in_cloud_xyzrgb);
 	registerStream("in_cloud_xyzrgb2", &in_cloud_xyzrgb2);
 	registerStream("in_cloud_normals", &in_cloud_normals);
+	registerStream("in_cloud_xyzrgb_normals", &in_cloud_xyzrgb_normals);
 
     registerStream("in_min_pt", &in_min_pt);
     registerStream("in_max_pt", &in_max_pt);
@@ -125,6 +130,11 @@ void CloudViewer::prepareInterface() {
 	h_on_cloud_normals.setup(boost::bind(&CloudViewer::on_cloud_normals, this));
 	registerHandler("on_cloud_normals", &h_on_cloud_normals);
 	addDependency("on_cloud_normals", &in_cloud_normals);
+
+	h_on_cloud_xyzrgb_normals.setup(boost::bind(&CloudViewer::on_cloud_xyzrgb_normals, this));
+	registerHandler("on_cloud_xyzrgb_normals", &h_on_cloud_xyzrgb_normals);
+	addDependency("on_cloud_xyzrgb_normals", &in_cloud_xyzrgb_normals);
+
     h_on_bounding_box.setup(boost::bind(&CloudViewer::on_bounding_box, this));
     registerHandler("on_bounding_box", &h_on_bounding_box);
     addDependency("on_bounding_box", &in_min_pt);
@@ -264,6 +274,26 @@ void CloudViewer::on_clouds_xyzrgb() {
 }
 
 void CloudViewer::on_cloud_normals() {
+}
+
+
+void CloudViewer::on_cloud_xyzrgb_normals() {
+	CLOG(LWARNING) << "CloudViewer::on_cloud_xyzrgb_normals";
+	pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud = in_cloud_xyzrgb_normals.read();
+
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudRgb(new pcl::PointCloud<pcl::PointXYZRGB>());
+	pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>());
+
+	pcl::copyPointCloud(*cloud, *cloudRgb);
+	pcl::copyPointCloud(*cloud, *normals);
+
+	viewer->removeAllPointClouds();
+	viewer->removeAllShapes();
+
+	pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb (cloudRgb);
+	viewer->addPointCloud<pcl::PointXYZRGB> (cloudRgb, rgb, "cloud");
+	viewer->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal>(cloudRgb, normals, normals_level, normals_scale, "normals");
+
 }
 
 void CloudViewer::on_bounding_box(){

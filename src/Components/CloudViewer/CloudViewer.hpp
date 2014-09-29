@@ -76,6 +76,7 @@ protected:
 	Base::DataStreamIn< pcl::PointCloud<pcl::PointXYZRGB>::Ptr > in_cloud_xyzrgb;
 	Base::DataStreamIn< pcl::PointCloud<pcl::PointXYZRGB>::Ptr > in_cloud_xyzrgb2;
 	Base::DataStreamIn< pcl::PointCloud<pcl::Normal>::Ptr > in_cloud_normals;
+	Base::DataStreamIn< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr > in_cloud_xyzrgb_normals;
 
     Base::DataStreamIn<pcl::PointXYZ> in_min_pt;
     Base::DataStreamIn<pcl::PointXYZ> in_max_pt;
@@ -87,6 +88,7 @@ protected:
 	Base::EventHandler2 h_on_cloud_xyzrgb;
 	Base::EventHandler2 h_on_clouds_xyzrgb;
 	Base::EventHandler2 h_on_cloud_normals;
+	Base::EventHandler2 h_on_cloud_xyzrgb_normals;
     Base::EventHandler2 h_on_bounding_box;
     Base::EventHandler2 h_on_point;
 	Base::EventHandler2 h_on_spin;
@@ -98,6 +100,7 @@ protected:
 	void on_cloud_xyzrgb();
 	void on_clouds_xyzrgb();
 	void on_cloud_normals();
+	void on_cloud_xyzrgb_normals();
     void on_bounding_box();
     void on_point();
 	void on_spin();
@@ -112,6 +115,9 @@ protected:
     Base::Property<float> prop_point_g;
     Base::Property<float> prop_point_b;
     Base::Property<float> prop_point_size;
+
+    Base::Property<float> normals_scale;
+    Base::Property<int> normals_level;
 
 	/// Property for setting of the background color. As default it is set to 1 row with 0, 0, 0(black).
 	Base::Property<std::string> prop_background_color;
