@@ -36,3 +36,5 @@ ADD_COMPONENT(FindBoundingBox)
 ADD_COMPONENT(CenterOfMass)
 
 ADD_COMPONENT(ClustersViewer)
+
+ADD_COMPONENT(CloudTransformer)

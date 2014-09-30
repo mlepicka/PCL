@@ -31,6 +31,8 @@
 				<Component name="Converter" type="PCL:DepthConverter" priority="4" bump="0">
 				</Component>
 				<Component name="Writer" type="PCL:PCDWriter" priority="5" bump="0">
+                                        <param name="suffix">1</param>
+                                        <param name="filename">/home/mlaszkow/test/writetest.pcd</param>
 				</Component>
 			</Executor>
 		</Subtask>

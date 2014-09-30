@@ -1,0 +1,58 @@
+<Task>
+	<!-- reference task information -->
+	<Reference>
+		<Author>
+			<name></name>
+			<link></link>
+		</Author>
+		
+		<Description>
+			<brief></brief>
+			<full></full>	
+		</Description>
+	</Reference>
+	
+	<!-- task definition -->
+	<Subtasks>
+		<Subtask name="Main">
+			<Executor name="Processing"  period="1">
+				<Component name="SequenceRGB" type="CvBasic:Sequence" priority="1" bump="0">
+					<param name="sequence.directory">/home/mlaszkow/obiekty/cereal_box_1</param>
+					<param name="sequence.pattern">cereal_box_1_1_005_color.png</param>				
+				</Component>
+				<Component name="SequenceDepth" type="CvBasic:Sequence" priority="2" bump="0">
+					<param name="sequence.directory">/home/mlaszkow/obiekty/cereal_box_1</param>
+					<param name="sequence.pattern">cereal_box_1_1_005_depth.png</param>	
+				</Component>
+				<Component name="CameraInfo" type="CvCoreTypes:CameraInfoProvider" priority="3" bump="0">
+					<param name="camera_matrix">525 0 319.5; 0 525 239.5; 0 0 1</param>
+				</Component>		
+				<Component name="Converter" type="PCL:DepthConverter" priority="1" bump="0">
+				</Component>
+				
+			</Executor>
+
+		</Subtask>	
+	
+	</Subtasks>
+	
+	<!-- pipes connecting datastreams -->
+	<DataStreams>
+		<Source name="SequenceRGB.out_img">
+			<sink>Converter.in_color</sink>	
+		</Source>
+		<Source name="SequenceDepth.out_img">
+			<sink>Converter.in_depth</sink>			
+		</Source>
+		<Source name="CameraInfo.out_camera_info">
+			<sink>Converter.in_camera_info</sink>	
+		</Source>
+
+
+
+	</DataStreams>
+</Task>
+
+
+
+

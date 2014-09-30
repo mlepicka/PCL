@@ -16,8 +16,8 @@
 #include "Property.hpp"
 
 #include <pcl/visualization/pcl_visualizer.h>
+#include <Types/PointXYZSIFT.hpp>
 
-//#include <Types/MatrixTranslator.hpp>
 
 
 namespace Processors {
@@ -75,6 +75,7 @@ protected:
 	Base::DataStreamIn< pcl::PointCloud<pcl::PointXYZ>::Ptr > in_cloud_xyz2;
 	Base::DataStreamIn< pcl::PointCloud<pcl::PointXYZRGB>::Ptr > in_cloud_xyzrgb;
 	Base::DataStreamIn< pcl::PointCloud<pcl::PointXYZRGB>::Ptr > in_cloud_xyzrgb2;
+    Base::DataStreamIn< pcl::PointCloud<PointXYZSIFT>::Ptr > in_cloud_xyzsift;
 	Base::DataStreamIn< pcl::PointCloud<pcl::Normal>::Ptr > in_cloud_normals;
 	Base::DataStreamIn< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr > in_cloud_xyzrgb_normals;
 
@@ -82,16 +83,7 @@ protected:
     Base::DataStreamIn<pcl::PointXYZ> in_max_pt;
 
 	Base::DataStreamIn<pcl::PointXYZ> in_point;
-	// Handlers
-	Base::EventHandler2 h_on_cloud_xyz;
-	Base::EventHandler2 h_on_clouds_xyz;
-	Base::EventHandler2 h_on_cloud_xyzrgb;
-	Base::EventHandler2 h_on_clouds_xyzrgb;
-	Base::EventHandler2 h_on_cloud_normals;
-	Base::EventHandler2 h_on_cloud_xyzrgb_normals;
-    Base::EventHandler2 h_on_bounding_box;
-    Base::EventHandler2 h_on_point;
-	Base::EventHandler2 h_on_spin;
+
 
 	
 	// Handlers
@@ -99,6 +91,7 @@ protected:
 	void on_clouds_xyz();
 	void on_cloud_xyzrgb();
 	void on_clouds_xyzrgb();
+    void on_cloud_xyzsift();
 	void on_cloud_normals();
 	void on_cloud_xyzrgb_normals();
     void on_bounding_box();
@@ -115,7 +108,7 @@ protected:
     Base::Property<float> prop_point_g;
     Base::Property<float> prop_point_b;
     Base::Property<float> prop_point_size;
-
+    Base::Property<float> prop_point_sift_size;
     Base::Property<float> normals_scale;
     Base::Property<int> normals_level;
 

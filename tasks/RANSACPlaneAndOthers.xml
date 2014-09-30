@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Task>
+	<!-- reference task information -->
+	<Reference>
+		<Author>
+			<name>Maciej Stefańczyk</name>
+			<link></link>
+		</Author>
+		
+		<Description>
+			<brief>Simple PCL viewer</brief>
+			<full>Simple PCL viewer, using PCD as source of depth data.</full>	
+		</Description>
+	</Reference>
+	
+	<!-- task definition -->
+	<Subtasks>
+		<Subtask name="Processing">
+			<Executor name="Exec1"  period="0.1">
+                                <Component name="Source" type="PCL:PCDReader" priority="1" bump="2">
+                                    <param name="filename">/home/dkaczmar/stereo/chmurki/rubik/rubik7.pcd</param>
+                                </Component>
+				<Component name="RANSAC" type="PCL:RANSACPlane" priority="1" bump="0">
+				</Component>
+                                <Component name="RANSAC2" type="PCL:RANSACPlane" priority="1" bump="0">
+                                </Component>
+			</Executor>
+		</Subtask>
+		
+		<Subtask name="Visualisation">
+			<Executor name="Exec2" period="0.01">
+				<Component name="Window" type="PCL:XYZCloudViewer" priority="1" bump="0">
+				<param name="count">2</param>
+				<param name="clouds_colours">255 255 255 ; 255 255 0</param>
+				</Component>
+			</Executor>
+		</Subtask>
+	
+	</Subtasks>
+	
+	<!-- connections between events and handelrs -->
+	<Events>
+	</Events>
+	
+	<!-- pipes connecting datastreams -->
+	<DataStreams>
+                <Source name="Source.out_cloud_xyzrgb">
+			<sink>RANSAC.in_pcl</sink>
+		</Source>
+<!--
+                <Source name="RANSAC.out_inliers">
+			<sink>Window.in_cloud_xyz0</sink>
+                </Source>-->
+                <Source name="RANSAC.out_outliers">
+                    <sink>RANSAC2.in_pcl</sink>
+                </Source>
+                <Source name="RANSAC2.out_inliers">
+                    <sink>Window.in_cloud_xyz0</sink>
+                </Source>
+<!--                <Source name="RANSAC.out_outliers">
+			<sink>Window.in_cloud_xyz1</sink>
+                </Source>-->
+	</DataStreams>
+</Task>
+
+
+
+
