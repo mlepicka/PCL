@@ -31,7 +31,8 @@ CloudViewer::CloudViewer(const std::string & name) :
     prop_point_b("point_b", 0),
     prop_point_size("point_size", 5),
 	normals_scale("normals.scale", 0.1),
-	normals_level("normals.level", 1)
+	normals_level("normals.level", 1),
+	prop_point_sift_size("point_size", 1)
 
 {
   registerProperty(prop_window_name);
@@ -45,6 +46,9 @@ CloudViewer::CloudViewer(const std::string & name) :
   registerProperty(prop_point_g);
   registerProperty(prop_point_b);
   registerProperty(prop_point_size);
+  registerProperty(prop_point_sift_size);
+  registerProperty(normals_scale);
+  registerProperty(normals_level);
   
 }
 
@@ -286,6 +290,8 @@ void CloudViewer::on_cloud_xyzsift() {
         "siftcloud");
 }
 
+void CloudViewer::on_cloud_normals() {
+}
 
 void CloudViewer::on_cloud_xyzrgb_normals() {
 	CLOG(LWARNING) << "CloudViewer::on_cloud_xyzrgb_normals";
