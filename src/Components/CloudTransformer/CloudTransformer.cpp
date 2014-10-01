@@ -28,10 +28,12 @@ void CloudTransformer::prepareInterface() {
 	registerStream("in_cloud_xyz", &in_cloud_xyz);
 	registerStream("in_cloud_xyzrgb", &in_cloud_xyzrgb);
     registerStream("in_cloud_xyzsift", &in_cloud_xyzsift);
+    registerStream("in_cloud_xyzshot", &in_cloud_xyzshot);
     registerStream("in_hm", &in_hm);
 	registerStream("out_cloud_xyz", &out_cloud_xyz);
 	registerStream("out_cloud_xyzrgb", &out_cloud_xyzrgb);
     registerStream("out_cloud_xyzsift", &out_cloud_xyzsift);
+    registerStream("out_cloud_xyzshot", &out_cloud_xyzshot);
 	// Register handlers
     h_transform_clouds.setup(boost::bind(&CloudTransformer::transform_clouds, this));
     registerHandler("transform_clouds", &h_transform_clouds);
@@ -72,6 +74,10 @@ void CloudTransformer::transform_clouds() {
     // Try to transform XYZSIFT.
     if(!in_cloud_xyzsift.empty())
         transform_xyzsift(hm);
+
+    // Try to transform XYZSHOT.
+    if(!in_cloud_xyzshot.empty())
+    	transform_xyzshot(hm);
 }
 
 
@@ -100,6 +106,15 @@ void CloudTransformer::transform_xyzsift(Types::HomogMatrix hm_) {
     pcl::PointCloud<PointXYZSIFT>::Ptr cloud2(new pcl::PointCloud<PointXYZSIFT>());
     pcl::transformPointCloud(*cloud, *cloud2, trans) ;
     out_cloud_xyzsift.write(cloud2);
+}
+
+void CloudTransformer::transform_xyzshot(Types::HomogMatrix hm_) {
+    CLOG(LTRACE) << "CloudTransformer::transform_xyzshot()";
+    pcl::PointCloud<PointXYZSHOT>::Ptr cloud = in_cloud_xyzshot.read();
+    Eigen::Matrix4f trans = hm_.getElements();
+    pcl::PointCloud<PointXYZSHOT>::Ptr cloud2(new pcl::PointCloud<PointXYZSHOT>());
+    pcl::transformPointCloud(*cloud, *cloud2, trans) ;
+    out_cloud_xyzshot.write(cloud2);
 }
 
 
