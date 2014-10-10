@@ -30,14 +30,17 @@ void CloudTransformer::prepareInterface() {
     registerStream("in_cloud_xyzsift", &in_cloud_xyzsift);
     registerStream("in_cloud_xyzshot", &in_cloud_xyzshot);
     registerStream("in_hm", &in_hm);
+    registerStream("in_eigen", &in_eigen);
 	registerStream("out_cloud_xyz", &out_cloud_xyz);
 	registerStream("out_cloud_xyzrgb", &out_cloud_xyzrgb);
     registerStream("out_cloud_xyzsift", &out_cloud_xyzsift);
     registerStream("out_cloud_xyzshot", &out_cloud_xyzshot);
 	// Register handlers
-    h_transform_clouds.setup(boost::bind(&CloudTransformer::transform_clouds, this));
-    registerHandler("transform_clouds", &h_transform_clouds);
+    registerHandler("transform_clouds", boost::bind(&CloudTransformer::transform_clouds, this));
     addDependency("transform_clouds", &in_hm);
+    registerHandler("transform_clouds_eigen", boost::bind(&CloudTransformer::transform_clouds_eigen, this));
+    addDependency("transform_clouds_eigen", &in_eigen);
+
 }
 
 bool CloudTransformer::onInit() {
@@ -78,6 +81,31 @@ void CloudTransformer::transform_clouds() {
     // Try to transform XYZSHOT.
     if(!in_cloud_xyzshot.empty())
     	transform_xyzshot(hm);
+}
+
+void CloudTransformer::transform_clouds_eigen() {
+    CLOG(LTRACE) << "CloudTransformer::transform_clouds()";
+
+    // Read hmomogenous matrix.
+    Eigen::Matrix4f eigen = in_eigen.read();
+    Types::HomogMatrix hm;
+    hm.setElements(eigen);
+
+    // Try to transform XYZ.
+    if(!in_cloud_xyz.empty())
+        transform_xyz(hm);
+
+    // Try to transform XYZRGB.
+    if(!in_cloud_xyzrgb.empty())
+        transform_xyzrgb(hm);
+
+    // Try to transform XYZSIFT.
+    if(!in_cloud_xyzsift.empty())
+        transform_xyzsift(hm);
+
+    // Try to transform XYZSHOT.
+    if(!in_cloud_xyzshot.empty())
+        transform_xyzshot(hm);
 }
 
 

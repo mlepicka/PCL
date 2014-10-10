@@ -78,15 +78,16 @@ protected:
     Base::DataStreamIn<pcl::PointCloud<PointXYZSIFT>::Ptr> in_cloud_xyzsift;
     Base::DataStreamIn<pcl::PointCloud<PointXYZSHOT>::Ptr> in_cloud_xyzshot;
     Base::DataStreamIn<Types::HomogMatrix> in_hm;
+    Base::DataStreamIn<Eigen::Matrix4f> in_eigen;
 	// Output data streams
 	Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZ>::Ptr> out_cloud_xyz;
 	Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> out_cloud_xyzrgb;
     Base::DataStreamOut<pcl::PointCloud<PointXYZSIFT>::Ptr> out_cloud_xyzsift;
     Base::DataStreamOut<pcl::PointCloud<PointXYZSHOT>::Ptr> out_cloud_xyzshot;
 
-	// Handlers
-    Base::EventHandler2 h_transform_clouds;
+    // Handlers
     void transform_clouds();
+    void transform_clouds_eigen();
 
 	// Properties
 
