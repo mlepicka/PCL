@@ -71,13 +71,13 @@ protected:
     Base::DataStreamIn<Base::UnitType> in_trigger;
 
 	/// Cloud containing points with Cartesian coordinates (XYZ).
-	Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZ>::Ptr > in_cloud_xyz;
+    Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZ>::Ptr, Base::DataStreamBuffer::Newest> in_cloud_xyz;
 
 	/// Cloud containing points with Cartesian coordinates and colour (XYZ + RGB).
-	Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZRGB>::Ptr > in_cloud_xyzrgb;
+    Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZRGB>::Ptr, Base::DataStreamBuffer::Newest> in_cloud_xyzrgb;
 
 	/// Cloud containing points with Cartesian coordinates and SIFT descriptor (XYZ + 128).
-	Base::DataStreamIn<pcl::PointCloud<PointXYZSIFT>::Ptr> in_cloud_xyzsift;
+    Base::DataStreamIn<pcl::PointCloud<PointXYZSIFT>::Ptr, Base::DataStreamBuffer::Newest> in_cloud_xyzsift;
 
 	// Handlers
     Base::EventHandler2 h_Write_xyz;

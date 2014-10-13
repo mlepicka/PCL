@@ -1,0 +1,85 @@
+<Task>
+	<!-- reference task information -->
+	<Reference>
+		<Author>
+			<name>Michał Laszkowski</name>
+			<link></link>
+		</Author>
+		
+		<Description>
+                        <brief>Generates Cuboid Model, transform and cut it</brief>
+                        <full></full>
+		</Description>
+	</Reference>
+	
+	<!-- task definition -->
+	<Subtasks>
+		<Subtask name="Main">
+			<Executor name="Processing"  period="1">
+                                <Component name="TriggerReader" type="CvBasic:Trigger" priority="1" bump="0">
+                                        <param name="">1</param>
+                                </Component>
+                                <Component name="ReaderXYZRGB" type="PCL:PCDReader" priority="2" bump="0">
+                                        <param name="filename">/home/discode/models/scena/remsey_oneview_xyzrgb.pcd</param>
+                                </Component>
+                                <Component name="ReaderXYZSIFT" type="PCL:PCDReader" priority="3" bump="0">
+                                        <param name="filename">/home/discode/models/scena/remsey_oneview_xyzsift.pcd</param>
+                                </Component>
+                                <Component name="PassThrough" type="PCL:PassThrough" priority="4" bump="0">
+                                    <param name="x.a">-1</param>
+                                    <param name="x.b">1</param>
+                                    <param name="y.a">-1</param>
+                                    <param name="y.b">1</param>
+                                    <param name="z.a">-1</param>
+                                    <param name="z.b">1</param>
+                                    <param name="negative_x">0</param>
+                                    <param name="negative_y">0</param>
+                                    <param name="negative_z">0</param>
+                                </Component>
+                                <Component name="TriggerWriter" type="CvBasic:Trigger" priority="7" bump="0">
+                                        <param name="">1</param>
+                                </Component>
+                                <Component name="Writer" type="PCL:PCDWriter" priority="8" bump="0">
+                                        <param name="suffix">1</param>
+                                        <param name="filename">/home/discode/models/scena/remsey_fragment1</param>
+                                </Component>
+			</Executor>
+
+			<Executor name="Visualization" period="1">
+                                <Component name="WindowPCL" type="PCL:CloudViewer" priority="1" bump="10">
+<!--                                    <param name="coordinate_system">false</param>-->
+				</Component>
+			</Executor>
+		</Subtask>	
+	
+	</Subtasks>
+	
+	<!-- pipes connecting datastreams -->
+	<DataStreams>
+                <Source name="TriggerReader.out_trigger">
+                        <sink>ReaderXYZRGB.in_trigger</sink>
+                        <sink>ReaderXYZSIFT.in_trigger</sink>
+                </Source>
+                <Source name="ReaderXYZRGB.out_cloud_xyzrgb">
+                        <sink>PassThrough.in_cloud_xyzrgb</sink>
+                </Source>
+                <Source name="ReaderXYZSIFT.out_cloud_xyzsift">
+                        <sink>PassThrough.in_cloud_xyzsift</sink>
+                </Source>
+                <Source name="PassThrough.out_cloud_xyzrgb">
+                        <sink>WindowPCL.in_cloud_xyzrgb</sink>
+                        <sink>Writer.in_cloud_xyzrgb</sink>
+                </Source>
+                <Source name="PassThrough.out_cloud_xyzsift">
+                        <sink>WindowPCL.in_cloud_xyzsift</sink>
+                        <sink>Writer.in_cloud_xyzsift</sink>
+                </Source>
+                <Source name="TriggerWriter.out_trigger">
+                        <sink>Writer.in_trigger</sink>
+                </Source>
+	</DataStreams>
+</Task>
+
+
+
+
