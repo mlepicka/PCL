@@ -163,20 +163,23 @@ bool CloudViewer::onInit() {
 	// Init camera parameters.
 	viewer->initCameraParameters();
 
-	// Add clouds of XYZ type.
+	// Add cloud of XYZ type.
 	viewer->addPointCloud<pcl::PointXYZ>(pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>), "xyz");
 
-	// Add clouds of XYZRBG type.
+	// Add cloud of XYZRBG type.
 	viewer->addPointCloud<pcl::PointXYZRGB>(pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>), "xyzrgb");
 
-	// Add clouds of XYZ type - for SIFTs.
+	// Add cloud of XYZ type - for SIFTs.
 	viewer->addPointCloud<pcl::PointXYZ>(pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>), "xyzsift") ;
 	// Set SIFT's properties.
 	viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, prop_sift_size, "xyzsift");
 	onSIFTColorChange(prop_sift_color);
 
-/*	viewer->addPointCloud<pcl::PointXYZRGBNormal>(pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr(new pcl::PointCloud<pcl::PointXYZRGBNormal>), "xyzrgbnormals");
-*/
+	// Add cloud of XYZRBGNormals type.
+	viewer->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal>(
+			pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>()),
+			pcl::PointCloud<pcl::Normal>::Ptr(new pcl::PointCloud<pcl::Normal>()),
+			normals_level, normals_scale, "xyzrgbnormals");
 
 //	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 0.5, "xyz");
 	return true;
@@ -231,7 +234,6 @@ void CloudViewer::on_cloud_xyzsift() {
 
 	// Update cloud.
 	viewer->updatePointCloud<pcl::PointXYZ> (cloud_xyz,"xyzsift");
-	//viewer->addPointCloud<pcl::PointXYZ>(cloud_xyz, "xyzsift");
 
 	// Update cloud properties.
 	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, prop_sift_size,"xyzsift");
