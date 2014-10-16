@@ -89,7 +89,7 @@ void DepthConverter::prepareInterface() {
 }
 
 bool DepthConverter::onInit() {
-	LOG(LTRACE) << "DepthConverter::onInit";
+	CLOG(LTRACE) << "DepthConverter::onInit";
 	return true;
 }
 
@@ -106,7 +106,7 @@ bool DepthConverter::onStart() {
 }
 
 void DepthConverter::process_depth() {
-	LOG(LTRACE) << "DepthConverter::process_depth\n";
+	CLOG(LTRACE) << "DepthConverter::process_depth\n";
 	
 	Types::CameraInfo camera_info = in_camera_info.read();
 	cv::Mat depth = in_depth.read();
@@ -150,11 +150,11 @@ void DepthConverter::process_depth() {
 	
 	out_cloud_xyz.write(cloud);
 /*	pcl::io::savePCDFileASCII ("test_pcd.pcd", *cloud);
-	CLOG(LNOTICE) << "Saved " << cloud->points.size () << " data points to test_pcd.pcd.";*/
+	CCLOG(LNOTICE) << "Saved " << cloud->points.size () << " data points to test_pcd.pcd.";*/
 }
 
 void DepthConverter::process_depth_mask() {
-	LOG(LTRACE) << "DepthConverter::process_depth_mask\n";
+	CLOG(LTRACE) << "DepthConverter::process_depth_mask\n";
 	
 	Types::CameraInfo camera_info = in_camera_info.read();
 	cv::Mat depth = in_depth.read();
@@ -204,11 +204,11 @@ void DepthConverter::process_depth_mask() {
 
 	out_cloud_xyz.write(cloud);
 	/*pcl::io::savePCDFileASCII ("test_pcd.pcd", *cloud);
-	CLOG(LNOTICE) << "Saved " << cloud->points.size () << " data points to test_pcd.pcd.";*/
+	CCLOG(LNOTICE) << "Saved " << cloud->points.size () << " data points to test_pcd.pcd.";*/
 }
 
 void DepthConverter::process_depth_mask_color() {
-	LOG(LTRACE) << "DepthConverter::process_depth_mask_color\n";
+	CLOG(LTRACE) << "DepthConverter::process_depth_mask_color\n";
 	
 	Types::CameraInfo camera_info = in_camera_info.read();
 	cv::Mat depth = in_depth.read();
@@ -277,11 +277,11 @@ void DepthConverter::process_depth_mask_color() {
 }
 
 void DepthConverter::process_depth_color() {
-    LOG(LTRACE) << "DepthConverter::process_depth_color\n";
+    CLOG(LTRACE) << "DepthConverter::process_depth_color\n";
 	Types::CameraInfo camera_info = in_camera_info.read();
 	cv::Mat depth = in_depth.read();
 	cv::Mat color = in_color.read();
-	LOG(LDEBUG) << "Width"<< camera_info.width()<<" Height: "<<camera_info.height()<<endl;
+	CLOG(LDEBUG) << "Width"<< camera_info.width()<<" Height: "<<camera_info.height()<<endl;
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>(camera_info.width(), camera_info.height()));
 
 	double fx_d = 0.001 / camera_info.fx();
@@ -335,12 +335,12 @@ void DepthConverter::process_depth_color() {
 }
 
 void DepthConverter::process_depth_xyz() {
-    LOG(LTRACE) << "DepthConverter::process_depth_xyz"<<endl;
+    CLOG(LTRACE) << "DepthConverter::process_depth_xyz"<<endl;
     cv::Mat depth_xyz = in_depth_xyz.read();
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>(depth_xyz.cols,depth_xyz.rows));
 
     const double max_z = 1.0e4;
-    LOG(LINFO) << "Generating depth point cloud";
+    CLOG(LINFO) << "Generating depth point cloud";
     try {
         for(int y = 0; y < depth_xyz.rows; y++)
         {
@@ -359,7 +359,7 @@ void DepthConverter::process_depth_xyz() {
         }
     } catch (...)
     {
-        LOG(LERROR) << "Error occured in processing input";
+        CLOG(LERROR) << "Error occurred in processing input";
     }
 
 
@@ -384,7 +384,7 @@ void DepthConverter::process_depth_xyz() {
 }
 
 void DepthConverter::process_depth_xyz_rgb_stereo() {
-    LOG(LTRACE) << "DepthConverter::process_depth_xyz_rgb_stereo()"<<endl;
+    CLOG(LTRACE) << "DepthConverter::process_depth_xyz_rgb_stereo()"<<endl;
     cv::Mat depth_xyz = in_depth_xyz.read();
     cv::Mat rgb_stereo = in_rgb_stereo.read();
 
@@ -392,7 +392,7 @@ void DepthConverter::process_depth_xyz_rgb_stereo() {
     uint32_t pr, pg, pb;
     const double max_z = 1.0e4;
 
-    LOG(LINFO) << "Generating depth point cloud";
+    CLOG(LINFO) << "Generating depth point cloud";
     try {
         for(int y = 0; y < depth_xyz.rows; y++)
         {
@@ -421,7 +421,7 @@ void DepthConverter::process_depth_xyz_rgb_stereo() {
 
     } catch (...)
     {
-        LOG(LERROR) << "Error occured in processing input";
+        CLOG(LERROR) << "Error occurred in processing input";
     }
 
     if(prop_remove_nan){
@@ -434,14 +434,14 @@ void DepthConverter::process_depth_xyz_rgb_stereo() {
 }
 
 void DepthConverter::process_depth_xyz_mask() {
-    LOG(LTRACE) << "DepthConverter::process_depth_xyz_mask()"<<endl;
+    CLOG(LTRACE) << "DepthConverter::process_depth_xyz_mask()"<<endl;
     cv::Mat depth_xyz = in_depth_xyz.read();
     cv::Mat mask = in_mask.read();
     mask.convertTo(mask, CV_32F);
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>(depth_xyz.cols,depth_xyz.rows));
 
     const double max_z = 1.0e4;
-    LOG(LINFO) << "Generating depth point cloud";
+    CLOG(LINFO) << "Generating depth point cloud";
     try {
         for(int y = 0; y < depth_xyz.rows; y++)
         {
@@ -463,7 +463,7 @@ void DepthConverter::process_depth_xyz_mask() {
         }
     } catch (...)
     {
-        LOG(LERROR) << "Error occured in processing input";
+        CLOG(LERROR) << "Error occurred in processing input";
     }
 
 
@@ -476,7 +476,7 @@ void DepthConverter::process_depth_xyz_mask() {
 }
 
 void DepthConverter::process_depth_xyz_rgb_stereo_mask() {
-    LOG(LTRACE) << "DepthConverter::process_depth_xyz_rgb_stereo_mask()"<<endl;
+    CLOG(LTRACE) << "DepthConverter::process_depth_xyz_rgb_stereo_mask()"<<endl;
     cv::Mat depth_xyz = in_depth_xyz.read();
     cv::Mat rgb_stereo = in_rgb_stereo.read();
     cv::Mat mask = in_mask.read();
@@ -486,7 +486,7 @@ void DepthConverter::process_depth_xyz_rgb_stereo_mask() {
     uint32_t pr, pg, pb;
     const double max_z = 1.0e4;
 
-    LOG(LINFO) << "Generating depth point cloud";
+    CLOG(LINFO) << "Generating depth point cloud";
     try {
         for(int y = 0; y < depth_xyz.rows; y++)
         {
@@ -517,7 +517,7 @@ void DepthConverter::process_depth_xyz_rgb_stereo_mask() {
 
     } catch (...)
     {
-        LOG(LERROR) << "Error occured in processing input";
+        CLOG(LERROR) << "Error occurred in processing input";
     }
 
     if(prop_remove_nan){

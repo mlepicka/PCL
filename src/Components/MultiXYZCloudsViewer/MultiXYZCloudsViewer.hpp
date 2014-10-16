@@ -4,8 +4,8 @@
  * \author Tomasz Kornuta [tkornuta@gmail.com]
  */
 
-#ifndef XYZCLOUDVIEWER_HPP_
-#define XYZCLOUDVIEWER_HPP_
+#ifndef MULTIXYZCLOUDSVIEWER_HPP_
+#define MULTIXYZCLOUDSVIEWER_HPP_
 
 #include "Component_Aux.hpp"
 #include "Component.hpp"
@@ -17,23 +17,23 @@
 #include <Types/MatrixTranslator.hpp>
 
 namespace Processors {
-namespace XYZCloudViewer {
+namespace MultiXYZCloudsViewer {
 
 /*!
- * \class XYZCloudViewer
- * \brief XYZCloudViewer processor class - component able to display many XYZ point clouds in one viewer window.
+ * \class MultiXYZCloudsViewer
+ * \brief MultiXYZCloudsViewer processor class - component able to display many XYZ point clouds in one viewer window.
  */
-class XYZCloudViewer: public Base::Component {
+class MultiXYZCloudsViewer: public Base::Component {
 public:
 	/*!
 	 * Constructor.
 	 */
-	XYZCloudViewer(const std::string & name = "XYZCloudViewer");
+	MultiXYZCloudsViewer(const std::string & name = "MultiXYZCloudsViewer");
 
 	/*!
 	 * Destructor
 	 */
-	virtual ~XYZCloudViewer();
+	virtual ~MultiXYZCloudsViewer();
 
 	/*!
 	 * Prepare components interface (register streams and handlers).
@@ -96,12 +96,12 @@ protected:
 
 };
 
-} //: namespace XYZCloudViewer
+} //: namespace MultiXYZCloudsViewer
 } //: namespace Processors
 
 /*
  * Register processor component.
  */
-REGISTER_COMPONENT("XYZCloudViewer", Processors::XYZCloudViewer::XYZCloudViewer)
+REGISTER_COMPONENT("MultiXYZCloudsViewer", Processors::MultiXYZCloudsViewer::MultiXYZCloudsViewer)
 
-#endif /* XYZCLOUDVIEWER_HPP_ */
+#endif /* MULTIXYZCLOUDSVIEWER_HPP_ */
