@@ -55,7 +55,7 @@ CloudViewer::CloudViewer(const std::string & name) :
 
 void CloudViewer::onCSShowClick(const bool & new_show_cs_){
     CLOG(LDEBUG) << "CloudViewer::onCSShowClick show="<<new_show_cs_;
-/*    if(new_show_cs_) {
+    if(new_show_cs_) {
 #if PCL_VERSION_COMPARE(>=,1,7,1)
         viewer->addCoordinateSystem (1.0, "CloudViewer", 0);
 #else
@@ -72,7 +72,7 @@ void CloudViewer::onCSShowClick(const bool & new_show_cs_){
 #endif
 	}
 
-	prop_coordinate_system = new_show_cs_;*/
+    prop_coordinate_system = new_show_cs_;
 }
 
 void CloudViewer::onBackgroundColorChange(std::string bcolor_){
@@ -108,6 +108,7 @@ void CloudViewer::prepareInterface() {
 	registerStream("in_cloud_xyzrgb", &in_cloud_xyzrgb);
 	registerStream("in_cloud_xyzrgb2", &in_cloud_xyzrgb2);
     registerStream("in_cloud_xyzsift", &in_cloud_xyzsift);
+    registerStream("in_cloud_xyzshot", &in_cloud_xyzshot);
 	registerStream("in_cloud_normals", &in_cloud_normals);
 	registerStream("in_cloud_xyzrgb_normals", &in_cloud_xyzrgb_normals);
 
@@ -122,6 +123,8 @@ void CloudViewer::prepareInterface() {
     addDependency("on_cloud_xyzrgb", &in_cloud_xyzrgb);
     registerHandler("on_cloud_xyzsift", boost::bind(&CloudViewer::on_cloud_xyzsift, this));
     addDependency("on_cloud_xyzsift", &in_cloud_xyzsift);
+    registerHandler("on_cloud_xyzshot", boost::bind(&CloudViewer::on_cloud_xyzshot, this));
+    addDependency("on_cloud_xyzshot", &in_cloud_xyzshot);
     registerHandler("on_clouds_xyz", boost::bind(&CloudViewer::on_clouds_xyz, this));
     addDependency("on_clouds_xyz", &in_cloud_xyz);
     addDependency("on_clouds_xyz", &in_cloud_xyz2);
@@ -288,6 +291,26 @@ void CloudViewer::on_cloud_xyzsift() {
         0,
         0,
         "siftcloud");
+}
+
+void CloudViewer::on_cloud_xyzshot() {
+    CLOG(LTRACE) << "CloudViewer::on_cloud_xyzshot";
+    pcl::PointCloud<PointXYZSHOT>::Ptr cloud = in_cloud_xyzshot.read();
+
+    // Filter the NaN points.
+    std::vector<int> indices;
+    cloud->is_dense = false;
+    pcl::removeNaNFromPointCloud(*cloud, *cloud, indices);
+    viewer->removePointCloud("shotcloud") ;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_xyz(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::copyPointCloud(*cloud,*cloud_xyz);
+    viewer->addPointCloud<pcl::PointXYZ>(cloud_xyz, "shotcloud") ;
+    viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, prop_point_sift_size, "shotcloud");
+    viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR,
+        0,
+        255,
+        0,
+        "shotcloud");
 }
 
 void CloudViewer::on_cloud_normals() {

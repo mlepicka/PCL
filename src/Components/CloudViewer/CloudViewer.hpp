@@ -17,6 +17,7 @@
 
 #include <pcl/visualization/pcl_visualizer.h>
 #include <Types/PointXYZSIFT.hpp>
+#include <Types/PointXYZSHOT.hpp>
 
 
 
@@ -76,6 +77,7 @@ protected:
 	Base::DataStreamIn< pcl::PointCloud<pcl::PointXYZRGB>::Ptr > in_cloud_xyzrgb;
 	Base::DataStreamIn< pcl::PointCloud<pcl::PointXYZRGB>::Ptr > in_cloud_xyzrgb2;
     Base::DataStreamIn< pcl::PointCloud<PointXYZSIFT>::Ptr > in_cloud_xyzsift;
+    Base::DataStreamIn< pcl::PointCloud<PointXYZSHOT>::Ptr > in_cloud_xyzshot;
 	Base::DataStreamIn< pcl::PointCloud<pcl::Normal>::Ptr > in_cloud_normals;
 	Base::DataStreamIn< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr > in_cloud_xyzrgb_normals;
 
@@ -92,6 +94,7 @@ protected:
 	void on_cloud_xyzrgb();
 	void on_clouds_xyzrgb();
     void on_cloud_xyzsift();
+    void on_cloud_xyzshot();
 	void on_cloud_normals();
 	void on_cloud_xyzrgb_normals();
     void on_bounding_box();
