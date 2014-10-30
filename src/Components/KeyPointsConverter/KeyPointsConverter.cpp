@@ -30,6 +30,7 @@ void KeyPointsConverter::prepareInterface() {
     registerStream("in_camera_info", &in_camera_info);
     registerStream("in_depth", &in_depth);
     registerStream("in_depth_xyz", &in_depth_xyz);
+    registerStream("out_cloud_xyz", &out_cloud_xyz);
     // Register handlers
     registerHandler("process", boost::bind(&KeyPointsConverter::process, this));
 	addDependency("process", &in_keypoints);
