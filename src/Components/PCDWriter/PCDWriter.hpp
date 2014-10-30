@@ -16,6 +16,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <Types/PointXYZSIFT.hpp>
+#include <Types/PointXYZSHOT.hpp>
 
 namespace Processors {
 namespace PCDWriter {
@@ -79,11 +80,9 @@ protected:
 	/// Cloud containing points with Cartesian coordinates and SIFT descriptor (XYZ + 128).
     Base::DataStreamIn<pcl::PointCloud<PointXYZSIFT>::Ptr, Base::DataStreamBuffer::Newest> in_cloud_xyzsift;
 
-	// Handlers
-    Base::EventHandler2 h_Write_xyz;
-    Base::EventHandler2 h_Write_xyzrgb;
-    Base::EventHandler2 h_Write_xyzsift;
-	
+    /// Cloud containing points with Cartesian coordinates and SHOT descriptor.
+    Base::DataStreamIn<pcl::PointCloud<PointXYZSHOT>::Ptr, Base::DataStreamBuffer::Newest> in_cloud_xyzshot;
+
 	Base::Property<std::string> filename;
     Base::Property<bool> binary;
     Base::Property<bool> suffix;
@@ -91,6 +90,7 @@ protected:
     void Write_xyz();
     void Write_xyzrgb();
     void Write_xyzsift();
+    void Write_xyzshot();
     void onTriggeredLoadNextCloud();
 
 

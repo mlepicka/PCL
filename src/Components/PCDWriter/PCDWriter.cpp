@@ -40,12 +40,14 @@ void PCDWriter::prepareInterface() {
     registerStream("in_cloud_xyz", &in_cloud_xyz);
 	registerStream("in_cloud_xyzrgb", &in_cloud_xyzrgb);
 	registerStream("in_cloud_xyzsift", &in_cloud_xyzsift);
+    registerStream("in_cloud_xyzshot", &in_cloud_xyzshot);
     registerStream("in_trigger", &in_trigger);
 
 	// Register handlers - no dependencies.
     registerHandler("Write_xyz", boost::bind(&PCDWriter::Write_xyz, this));
     registerHandler("Write_xyzrgb", boost::bind(&PCDWriter::Write_xyzrgb, this));
     registerHandler("Write_xyzsift", boost::bind(&PCDWriter::Write_xyzsift, this));
+    registerHandler("Write_xyzshot", boost::bind(&PCDWriter::Write_xyzshot, this));
 
     registerHandler("onTriggeredLoadNextCloud", boost::bind(&PCDWriter::onTriggeredLoadNextCloud, this));
     addDependency("onTriggeredLoadNextCloud", &in_trigger);
@@ -76,6 +78,8 @@ void PCDWriter::onTriggeredLoadNextCloud(){
         Write_xyzrgb();
     if(!in_cloud_xyzsift.empty())
         Write_xyzsift();
+    if(!in_cloud_xyzshot.empty())
+        Write_xyzshot();
 }
 
 void PCDWriter::Write_xyz() {
@@ -124,6 +128,21 @@ void PCDWriter::Write_xyzsift() {
     }
     pcl::io::savePCDFile (fn, *cloud, binary);
     CLOG(LINFO) << "Saved " << cloud->points.size () << " XYZSIFT points to "<< filename << std::endl;
+}
+
+void PCDWriter::Write_xyzshot() {
+    CLOG(LTRACE) << "PCDWriter::Write_xyzshot";
+    pcl::PointCloud<PointXYZSHOT>::Ptr cloud = in_cloud_xyzshot.read();
+    std::string fn = filename;
+    if(suffix){
+        size_t f = fn.find(".pcd");
+        if(f != std::string::npos){
+            fn.erase(f);
+        }
+        fn = std::string(fn) + std::string("_xyzshot.pcd");
+    }
+    pcl::io::savePCDFile (fn, *cloud, binary);
+    CLOG(LINFO) << "Saved " << cloud->points.size () << " XYZSHOT points to "<< filename << std::endl;
 }
 
 
