@@ -17,30 +17,39 @@
 		<Subtask name="Main">
 			<Executor name="Processing"  period="1">
 				<Component name="SequenceRGB" type="CvBasic:Sequence" priority="1" bump="0">
-					<param name="sequence.directory">/home/mlaszkow/obiekty/cereal_box_1</param>
-					<param name="sequence.pattern">cereal_box_1_1_005_color.png</param>				
+					<param name="sequence.directory">/home/discode/14.06.13objects/loyd_zielona_biala</param>
+					<param name="sequence.pattern">loyd_zielona_biala.*_rgb.png</param>				
 				</Component>
 				<Component name="SequenceDepth" type="CvBasic:Sequence" priority="2" bump="0">
-					<param name="sequence.directory">/home/mlaszkow/obiekty/cereal_box_1</param>
-					<param name="sequence.pattern">cereal_box_1_1_005_depth.png</param>	
+					<param name="sequence.directory">/home/discode/14.06.13objects/loyd_zielona_biala</param>
+					<param name="sequence.pattern">loyd_zielona_biala.*_rgb.png</param>				
 				</Component>
 				<Component name="CameraInfo" type="CvCoreTypes:CameraInfoProvider" priority="3" bump="0">
 					<param name="camera_matrix">525 0 319.5; 0 525 239.5; 0 0 1</param>
+					<param name="dist_coeffs">0.18126525 -0.39866885 0.00000000 0.00000000 0.00000000</param>
 				</Component>		
 				<Component name="Converter" type="PCL:DepthConverter" priority="1" bump="0">
 				</Component>
-				
 			</Executor>
+		</Subtask>	
 
+		<Subtask name="Display">
+			<Executor name="Display" period="0.1">
+				<Component name="Window" type="PCL:CloudViewer" priority="1" bump="0">
+					<param name="background_r">255</param>
+					<param name="background_g">255</param>
+					<param name="background_b">255</param>
+				</Component>
+			</Executor>
 		</Subtask>	
 	
 	</Subtasks>
 	
 	<!-- pipes connecting datastreams -->
 	<DataStreams>
-		<Source name="SequenceRGB.out_img">
+		<!--<Source name="SequenceRGB.out_img">
 			<sink>Converter.in_color</sink>	
-		</Source>
+		</Source>-->
 		<Source name="SequenceDepth.out_img">
 			<sink>Converter.in_depth</sink>			
 		</Source>
@@ -48,7 +57,12 @@
 			<sink>Converter.in_camera_info</sink>	
 		</Source>
 
-
+	        <Source name="Converter.out_cloud_xyzrgb">
+			<sink>Window.in_cloud_xyzrgb</sink>
+		</Source>
+	        <Source name="Converter.out_cloud_xyz">
+			<sink>Window.in_cloud_xyz</sink>
+		</Source>
 
 	</DataStreams>
 </Task>

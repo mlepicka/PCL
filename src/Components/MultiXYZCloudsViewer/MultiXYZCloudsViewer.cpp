@@ -34,9 +34,12 @@ MultiXYZCloudsViewer::MultiXYZCloudsViewer(const std::string & name) :
   registerProperty(prop_coordinate_system);
 
   // Set white as default.
-  ((cv::Mat)clouds_colours).at<uchar>(0,0) = 255;
-  ((cv::Mat)clouds_colours).at<uchar>(0,1) = 255;
-  ((cv::Mat)clouds_colours).at<uchar>(0,2) = 255;
+  ((cv::Mat)clouds_colours).at<float>(0,0) = 255;
+  ((cv::Mat)clouds_colours).at<float>(0,1) = 255;
+  ((cv::Mat)clouds_colours).at<float>(0,2) = 255;
+
+//	cout << ((cv::Mat)clouds_colours).at<float>(0, 0) << " " << ((cv::Mat)clouds_colours).at<float>(0, 1) << " " <<  ((cv::Mat)clouds_colours).at<float>(0, 2) <<endl;
+
 }
 
 
@@ -90,7 +93,6 @@ bool MultiXYZCloudsViewer::onInit() {
 	LOG(LTRACE) << "MultiXYZCloudsViewer::onInit";
 	// Create visualizer.
 	viewer = new pcl::visualization::PCLVisualizer (title);
-	viewer->initCameraParameters ();
 	// Add visible coortinate system.
 	if(prop_coordinate_system) {
 #if PCL_VERSION_COMPARE(>=,1,7,1)
@@ -103,17 +105,17 @@ bool MultiXYZCloudsViewer::onInit() {
 	// Add clouds.
 	for (int i = 0; i < count; ++i) {
 		char id = '0' + i;
-		
-		// Create i-th cloud.
-		viewer->addPointCloud<pcl::PointXYZ> (pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>), std::string("in_cloud_xyz") + id);
+
+		// Create i-th pointer to cloud.
+		pcl::PointCloud<pcl::PointXYZ>::Ptr tmp_ptr(new pcl::PointCloud<pcl::PointXYZ>);
+
+		// Add cloud to viewer.
+		viewer->addPointCloud<pcl::PointXYZ> (tmp_ptr, std::string("in_cloud_xyz") + id);
+		// Set rendering properties.
 		viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, std::string("in_cloud_xyz") + id);
-		// Set cloud colour depending on the property.
-		viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, 
-			((cv::Mat)clouds_colours).at<uchar>(i, 0),
-			((cv::Mat)clouds_colours).at<uchar>(i, 1),
-			((cv::Mat)clouds_colours).at<uchar>(i, 2),
-			std::string("in_cloud_xyz") + id); 
 	}
+
+	viewer->initCameraParameters ();
 
 	return true;
 }
@@ -138,8 +140,15 @@ void MultiXYZCloudsViewer::on_cloud_xyzN(int n) {
 	// Read input cloud from n-th dataport.
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = in_clouds[n]->read();
 	char id = '0' + n;
+
+	//cout << ((cv::Mat)clouds_colours).at<float>(n, 0) << " " << ((cv::Mat)clouds_colours).at<float>(n, 1) << " " <<  ((cv::Mat)clouds_colours).at<float>(n, 2) <<endl;
+	// Set cloud colour depending on the property.
+	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> single_color(cloud, ((cv::Mat)clouds_colours).at<float>(n, 0),
+			((cv::Mat)clouds_colours).at<float>(n, 1),
+			((cv::Mat)clouds_colours).at<float>(n, 2));
+
 	// Refresh n-th cloud.
-	viewer->updatePointCloud<pcl::PointXYZ> (cloud, std::string("in_cloud_xyz") + id);
+	viewer->updatePointCloud<pcl::PointXYZ> (cloud, single_color, std::string("in_cloud_xyz") + id);
 }
 
 void MultiXYZCloudsViewer::on_spin() {
