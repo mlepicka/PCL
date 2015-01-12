@@ -1,0 +1,91 @@
+<Task>
+	<!-- reference task information -->
+	<Reference>
+		<Author>
+			<name></name>
+			<link></link>
+		</Author>
+		
+		<Description>
+			<brief></brief>
+			<full></full>	
+		</Description>
+	</Reference>
+	
+	<!-- task definition -->
+	<Subtasks>
+		<Subtask name="Main">
+			<Executor name="Processing"  period="1">
+                            <Component name="NextImageTrigger" type="CvBasic:Trigger" priority="1" bump="0">
+                            </Component>
+                                <Component name="SequenceRGB" type="CvBasic:Sequence" priority="2" bump="0">
+                                        <param name="sequence.directory">/home/discode/012</param>
+                                        <param name="sequence.pattern">.*\_rgb\.png</param>
+                                        <param name="mode.auto_trigger">0</param>
+				</Component>
+                                <Component name="SequenceXYZ" type="CvBasic:Sequence" priority="3" bump="0">
+                                        <param name="sequence.directory">/home/discode/012</param>
+                                        <param name="sequence.pattern">.*\_xyz\.yml</param>
+                                        <param name="mode.auto_trigger">0</param>
+				</Component>	
+                                <Component name="Converter" type="PCL:DepthConverter" priority="4" bump="0">
+				</Component>
+
+                                <Component name="SIFT" type="CvBasic:CvSIFT" priority="5" bump="0">
+                                </Component>
+                                <Component name="FeatureCloudConverter" type="SIFTObjectModel:FeatureCloudConverter" priority="6" bump="0">
+                                </Component>
+
+                                <Component name="Writer" type="PCL:PCDWriter" priority="7" bump="0">
+                                        <param name="suffix">1</param>
+                                        <param name="filename">/home/mlaszkow/test/mapa012_1</param>
+                                </Component>
+				
+			</Executor>
+                        <Executor name="Visualization" period="0.2">
+                                <Component name="Window" type="PCL:CloudViewer" priority="1" bump="0">
+                                        <param name="prop_coordinate_system">0</param>
+                                </Component>
+                        </Executor>
+		</Subtask>	
+	
+	</Subtasks>
+	
+	<!-- pipes connecting datastreams -->
+	<DataStreams>
+                <Source name="NextImageTrigger.out_trigger">
+                        <sink>SequenceRGB.in_trigger</sink>
+                        <sink>SequenceXYZ.in_trigger</sink>
+                </Source>
+                <Source name="SequenceRGB.out_img">
+                        <sink>Converter.in_rgb_stereo</sink>
+                        <sink>SIFT.in_img</sink>
+                </Source>
+                <Source name="SequenceXYZ.out_img">
+                        <sink>Converter.in_depth_xyz</sink>
+                        <sink>FeatureCloudConverter.in_depth_xyz</sink>
+		</Source>
+                <Source name="Converter.out_cloud_xyzrgb">
+                        <sink>Writer.in_cloud_xyzrgb</sink>
+                        <sink>Window.in_cloud_xyzrgb</sink>
+                </Source>
+
+                <Source name="SIFT.out_features">
+                        <sink>FeatureCloudConverter.in_features</sink>
+                </Source>
+                <Source name="SIFT.out_descriptors">
+                        <sink>FeatureCloudConverter.in_descriptors</sink>
+                </Source>
+                <Source name="FeatureCloudConverter.out_cloud_xyzsift">
+                        <sink>Writer.in_cloud_xyzsift</sink>
+                        <sink>Window.in_cloud_xyzsift</sink>
+                </Source>
+
+
+	</DataStreams>
+
+</Task>
+
+
+
+
