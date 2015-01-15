@@ -9,9 +9,9 @@ FIND_PACKAGE( OpenCV REQUIRED )
 FIND_PACKAGE( PCL 1.7.0 REQUIRED )
 
 # Create an executable file from sources:
-ADD_LIBRARY(XYZCloudViewer SHARED ${files})
+ADD_LIBRARY(MultiXYZCloudsViewer SHARED ${files})
 
 # Link external libraries
-TARGET_LINK_LIBRARIES(XYZCloudViewer ${OpenCV_LIBS} ${DisCODe_LIBRARIES} ${PCL_LIBRARIES})
+TARGET_LINK_LIBRARIES(MultiXYZCloudsViewer ${OpenCV_LIBS} ${DisCODe_LIBRARIES} ${PCL_LIBRARIES})
 
-INSTALL_COMPONENT(XYZCloudViewer)
+INSTALL_COMPONENT(MultiXYZCloudsViewer)

@@ -51,10 +51,10 @@ bool ClustersViewer::onInit() {
 	// Add visible coortinate system.
 	if(prop_coordinate_system) {
 #if PCL_VERSION_COMPARE(>=,1,7,1)
-	    viewer->addCoordinateSystem (1.0, "ClustersViewer", 0);
-#else
-	    viewer->addCoordinateSystem (1.0);
+		viewer->addCoordinateSystem ();
 #endif
+	// TODO: Currently only 1.7.1 is available in the 012/031 laboratories.
+	// TODO: Fix for other versions of PCL.
 	}
 	count = 0;
  	return true;

@@ -3,13 +3,12 @@
 	<!-- reference task information -->
 	<Reference>
 		<Author>
-			<name>Maciej Stefańczyk</name>
+			<name>Tomasz Kornuta</name>
 			<link></link>
 		</Author>
 		
 		<Description>
-			<brief>Simple PCL viewer</brief>
-			<full>Simple PCL viewer, using Kinect as source of depth data.</full>	
+			<brief>Displays XYZ cloud acquired from Kinect</brief>
 		</Description>
 	</Reference>
 	
@@ -18,19 +17,16 @@
 		<Subtask name="Processing">
 			<Executor name="Exec1"  period="0.1">
 				<Component name="Source" type="CameraNUI:CameraNUI" priority="1" bump="0">
-					<param name="lib">freenect</param>
-					<param name="skip_stop">1</param>
-					<param name="camera_mode">rgb</param>
 					<param name="sync">1</param>
 				</Component>
 				
-				<Component name="Converter" type="PCL:DepthConverter" priority="1" bump="0">
+				<Component name="Converter" type="PCL:DepthConverter" priority="2" bump="0">
 				</Component>
 			</Executor>
 		</Subtask>
 		
 		<Subtask name="Visualisation">
-			<Executor name="Exec2" period="0.01">
+			<Executor name="Exec2" period="0.1">
 				<Component name="Window" type="PCL:CloudViewer" priority="1" bump="0">
 				</Component>
 			</Executor>

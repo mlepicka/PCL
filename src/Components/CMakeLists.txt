@@ -21,7 +21,7 @@ ADD_COMPONENT(ClusterExtraction)
 
 ADD_COMPONENT(SHOT)
 
-ADD_COMPONENT(XYZCloudViewer)
+ADD_COMPONENT(MultiXYZCloudsViewer)
 
 ADD_COMPONENT(PassThrough)
 

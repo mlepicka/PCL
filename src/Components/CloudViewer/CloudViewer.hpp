@@ -1,7 +1,7 @@
 /*!
  * \file
  * \brief 
- * \author Maciej Stefańczyk [maciek.slon@gmail.com]
+ * \author Maciej Stefańczyk, Michał Laszkowski, Tomasz Kornuta
  */
 
 #ifndef CLOUDVIEWER_HPP_
@@ -17,7 +17,6 @@
 
 #include <pcl/visualization/pcl_visualizer.h>
 #include <Types/PointXYZSIFT.hpp>
-#include <Types/PointXYZSHOT.hpp>
 
 
 
@@ -26,7 +25,8 @@ namespace CloudViewer {
 
 /*!
  * \class CloudViewer
- * \brief CloudViewer processor class.
+ * \brief Class responsible for displaying diverse clouds.
+ * \author Maciej Stefańczyk, Michał Laszkowski, Tomasz Kornuta
  *
  * Pointcloud viewer with normals visualization
  */
@@ -71,63 +71,58 @@ protected:
 	 */
 	bool onStop();
 
-	// Data streams
-	Base::DataStreamIn< pcl::PointCloud<pcl::PointXYZ>::Ptr > in_cloud_xyz;
-	Base::DataStreamIn< pcl::PointCloud<pcl::PointXYZ>::Ptr > in_cloud_xyz2;
-	Base::DataStreamIn< pcl::PointCloud<pcl::PointXYZRGB>::Ptr > in_cloud_xyzrgb;
-	Base::DataStreamIn< pcl::PointCloud<pcl::PointXYZRGB>::Ptr > in_cloud_xyzrgb2;
-    Base::DataStreamIn< pcl::PointCloud<PointXYZSIFT>::Ptr > in_cloud_xyzsift;
-    Base::DataStreamIn< pcl::PointCloud<PointXYZSHOT>::Ptr > in_cloud_xyzshot;
-	Base::DataStreamIn< pcl::PointCloud<pcl::Normal>::Ptr > in_cloud_normals;
-	Base::DataStreamIn< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr > in_cloud_xyzrgb_normals;
+	/// Data stream with cloud of XYZ points.
+	Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZ>::Ptr, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_cloud_xyz;
 
-    Base::DataStreamIn<pcl::PointXYZ> in_min_pt;
-    Base::DataStreamIn<pcl::PointXYZ> in_max_pt;
+	/// Data stream with cloud of XYZRGB points.
+	Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZRGB>::Ptr, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_cloud_xyzrgb;
 
-	Base::DataStreamIn<pcl::PointXYZ> in_point;
+	/// Data stream with cloud of XYZ SIFTs.
+    Base::DataStreamIn<pcl::PointCloud<PointXYZSIFT>::Ptr, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_cloud_xyzsift;
 
+	/// Data stream with cloud of XYZ points with normals.
+    Base::DataStreamIn< pcl::PointCloud<pcl::Normal>::Ptr, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_cloud_normals;
 
-	
+    /// Data stream with cloud of XYZRGB points with normals.
+	Base::DataStreamIn< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_cloud_xyzrgb_normals;
+
 	// Handlers
 	void on_cloud_xyz();
-	void on_clouds_xyz();
 	void on_cloud_xyzrgb();
-	void on_clouds_xyzrgb();
     void on_cloud_xyzsift();
-    void on_cloud_xyzshot();
 	void on_cloud_normals();
 	void on_cloud_xyzrgb_normals();
-    void on_bounding_box();
-    void on_point();
 	void on_spin();
 
+	/// Property: name of the window.
     Base::Property<std::string> prop_window_name;
+
+	/// Property: display/hide coordinate system.
     Base::Property<bool> prop_coordinate_system;
-    Base::Property<bool> prop_two_viewports;
-    Base::Property<float> prop_bounding_box_r;
-    Base::Property<float> prop_bounding_box_g;
-    Base::Property<float> prop_bounding_box_b;
-    Base::Property<float> prop_point_r;
-    Base::Property<float> prop_point_g;
-    Base::Property<float> prop_point_b;
-    Base::Property<float> prop_point_size;
-    Base::Property<float> prop_point_sift_size;
+
+	/// Property: background color. As default it is set to 1 row with 0, 0, 0 (black).
+	Base::Property<std::string> prop_background_color;
+
+	/// Property: color of sift points. As default it is set to 1 row with 255, 0, 0 (red).
+	Base::Property<std::string> prop_sift_color;
+
+	/// Property: size of sift points. As default it is set to 1.
+    Base::Property<float> prop_sift_size;
+
     Base::Property<float> normals_scale;
     Base::Property<int> normals_level;
 
-	/// Property for setting of the background color. As default it is set to 1 row with 0, 0, 0(black).
-	Base::Property<std::string> prop_background_color;
-
-
-	pcl::visualization::PCLVisualizer * viewer;
-	pcl::visualization::PCLVisualizer * viewer2;
-	int v1,v2;
+    pcl::visualization::PCLVisualizer * viewer;
+	int v1;
 
 	/// Handler for showing/hiding coordinate system.
 	void onCSShowClick(const bool & new_show_cs_);
 
 	/// Handler for changing background color.
-	void onBackgroundColorChange(std::string bcolor_);
+	void onBackgroundColorChange(std::string color_);
+
+	/// Handler for changing SIFT color.
+	void onSIFTColorChange(std::string color_);
 };
 
 } //: namespace CloudViewer
