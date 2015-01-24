@@ -65,21 +65,23 @@ bool VoxelGrid::onStart() {
 }
 
 void VoxelGrid::filter() {
-	CLOG(LWARNING) << "VoxelGrid::filter" ;
+	CLOG(LTRACE) << "VoxelGrid::filter" ;
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = in_cloud_xyzrgb.read();
+	CLOG(LINFO) << "PointCloud before filtering contains " << cloud->points.size ()  << " points";
 	
 	pcl::VoxelGrid<pcl::PointXYZRGB> vg;
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZRGB>);
 	vg.setInputCloud (cloud);
 	vg.setLeafSize (x, y, z);
 	vg.filter (*cloud_filtered);
-	CLOG(LWARNING) << "PointCloud after filtering has: " << cloud_filtered->points.size ()  << " data points." << std::endl;
+
+	CLOG(LINFO) << "PointCloud after filtering contains " << cloud_filtered->points.size ()  << " points";
 	out_cloud_xyzrgb.write(cloud_filtered);
 	
 }
 
 void VoxelGrid::filter_normal () {
-	CLOG(LWARNING) << "VoxelGrid::filter_normal";
+	CLOG(LTRACE) << "VoxelGrid::filter_normal";
  	pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud = in_cloud_xyzrgb_normal.read();
  
  	pcl::VoxelGrid<pcl::PointXYZRGBNormal> vg;
