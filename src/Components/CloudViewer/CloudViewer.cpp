@@ -24,7 +24,7 @@ CloudViewer::CloudViewer(const std::string & name) :
 		prop_background_color("background_color", boost::bind(&CloudViewer::onBackgroundColorChange, this, _2), std::string("0,0,0")),
 		normals_scale("normals.scale", 0.1),
 		normals_level("normals.level", 1),
-		prop_sift_size("sift.size", 1),
+		prop_sift_size("sift.size", boost::bind(&CloudViewer::onSIFTSizeChange, this, _2), 1),
 		prop_sift_color("sift.color", boost::bind(&CloudViewer::onSIFTColorChange, this, _2), std::string("255,0,0"))
 
 {
@@ -41,7 +41,7 @@ CloudViewer::CloudViewer(const std::string & name) :
 }
 
 void CloudViewer::onCSShowClick(const bool & new_show_cs_) {
-	CLOG(LDEBUG) << "CloudViewer::onCSShowClick show=" << new_show_cs_;
+	CLOG(LTRACE) << "CloudViewer::onCSShowClick show=" << new_show_cs_;
     if (!viewer)
     	return;
 
@@ -63,7 +63,7 @@ void CloudViewer::onCSShowClick(const bool & new_show_cs_) {
 }
 
 void CloudViewer::onBackgroundColorChange(std::string color_) {
-	CLOG(LDEBUG) << "CloudViewer::onBackgroundColorChange color=" << color_;
+	CLOG(LTRACE) << "CloudViewer::onBackgroundColorChange color=" << color_;
 	try {
 		// Parse string.
 		vector<std::string> strs;
@@ -112,6 +112,13 @@ void CloudViewer::onSIFTColorChange(std::string color_) {
 
 }
 
+void CloudViewer::onSIFTSizeChange(int size_){
+	CLOG(LDEBUG) << "CloudViewer::onSIFTSizeChange size=" << size_;
+
+	// Change SIFT size.
+	if (viewer)
+		viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size_, "xyzsift");
+}
 
 CloudViewer::~CloudViewer() {
 }
@@ -151,7 +158,7 @@ void CloudViewer::prepareInterface() {
 
 bool CloudViewer::onInit() {
 
-	CLOG(LTRACE) << "CloudViewer::onInit, prop_two_viewports==false\n";
+	CLOG(LTRACE) << "CloudViewer::onInit\n";
 	viewer = new pcl::visualization::PCLVisualizer(prop_window_name);
 	//viewer->createViewPort (0.0, 0.0, 0.5, 1.0, v1);
 
@@ -173,8 +180,8 @@ bool CloudViewer::onInit() {
 	// Add cloud of XYZ type - for SIFTs.
 	viewer->addPointCloud<pcl::PointXYZ>(pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>), "xyzsift") ;
 	// Set SIFT's properties.
-	viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, prop_sift_size, "xyzsift");
 	onSIFTColorChange(prop_sift_color);
+	onSIFTSizeChange(prop_sift_size);
 
 	// Add cloud of XYZRBGNormals type.
 	viewer->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal>(

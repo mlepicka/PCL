@@ -66,19 +66,25 @@ bool StatisticalOutlierRemoval::onStart() {
 }
 
 void StatisticalOutlierRemoval::filter_xyzrgb() {
-		CLOG(LINFO) << "StatisticalOutlierRemoval::filter_xyzrgb";
+	CLOG(LTRACE) << "StatisticalOutlierRemoval::filter_xyzrgb";
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = in_cloud_xyzrgb.read();
+
+	CLOG(LINFO) << "Before filtering Point cloud contained " << cloud->size() << " points";
+
 	pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
 	sor.setInputCloud (cloud);
 	sor.setMeanK (MeanK);
 	sor.setStddevMulThresh (StddevMulThresh);
 	sor.setNegative (negative);
 	sor.filter (*cloud);
+
+	CLOG(LINFO) << "After filtering Point cloud contained " << cloud->size() << " points";
+
 	out_cloud_xyzrgb.write(cloud);
 }
 
 void StatisticalOutlierRemoval::filter_xyz() {
-	CLOG(LINFO) << "StatisticalOutlierRemoval::filter_xyzrgb";
+	CLOG(LTRACE) << "StatisticalOutlierRemoval::filter_xyz";
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = in_cloud_xyz.read();
 	pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
 	sor.setInputCloud (cloud);

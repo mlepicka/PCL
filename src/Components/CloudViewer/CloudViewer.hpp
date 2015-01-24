@@ -123,6 +123,9 @@ protected:
 
 	/// Handler for changing SIFT color.
 	void onSIFTColorChange(std::string color_);
+
+	/// Handler for changing SIFT size.
+	void onSIFTSizeChange(int size_);
 };
 
 } //: namespace CloudViewer
