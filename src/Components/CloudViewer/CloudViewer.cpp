@@ -38,6 +38,7 @@ CloudViewer::CloudViewer(const std::string & name) :
 	registerProperty(normals_scale);
 	registerProperty(normals_level);
 
+	viewer = NULL;
 }
 
 void CloudViewer::onCSShowClick(const bool & new_show_cs_) {
@@ -114,10 +115,15 @@ void CloudViewer::onSIFTColorChange(std::string color_) {
 
 void CloudViewer::onSIFTSizeChange(int size_){
 	CLOG(LDEBUG) << "CloudViewer::onSIFTSizeChange size=" << size_;
+	try {
 
 	// Change SIFT size.
 	if (viewer)
 		viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size_, "xyzsift");
+	} catch (...) {
+		CLOG(LWARNING)
+				<< "CloudViewer::onSIFTSizeChange failed";
+	}
 }
 
 CloudViewer::~CloudViewer() {
