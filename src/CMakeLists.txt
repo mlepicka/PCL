@@ -15,7 +15,7 @@ include_directories(SYSTEM ${Boost_INCLUDE_DIR})
 # # OpenCV library
 # FIND_PACKAGE( OpenCV REQUIRED )
 
-FIND_PACKAGE(PCL 1.7.1 REQUIRED)
+FIND_PACKAGE(PCL 1.7 REQUIRED)
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
