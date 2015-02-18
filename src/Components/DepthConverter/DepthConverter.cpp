@@ -438,10 +438,11 @@ void DepthConverter::process_depth_xyz_mask() {
     cv::Mat depth_xyz = in_depth_xyz.read();
     cv::Mat mask = in_mask.read();
     mask.convertTo(mask, CV_32F);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>(depth_xyz.cols,depth_xyz.rows));
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
 
     const double max_z = 1.0e4;
     CLOG(LINFO) << "Generating depth point cloud";
+    int cnt = 0;
     try {
         for(int y = 0; y < depth_xyz.rows; y++)
         {
@@ -453,6 +454,7 @@ void DepthConverter::process_depth_xyz_mask() {
                 cv::Vec3f point = depth_xyz.at<cv::Vec3f>(y, x);
                 if(fabs(point[2] - max_z) < FLT_EPSILON || fabs(point[2]) > max_z) continue;
 
+		cnt++;
                 //Insert info into point cloud structure
                 pcl::PointXYZ point1;
                 point1.x = point[0];
@@ -465,6 +467,8 @@ void DepthConverter::process_depth_xyz_mask() {
     {
         CLOG(LERROR) << "Error occurred in processing input";
     }
+    
+    CLOG(LINFO) << "Converted points: " << cnt;
 
 
     if(prop_remove_nan){
@@ -472,6 +476,7 @@ void DepthConverter::process_depth_xyz_mask() {
         cloud->is_dense = false;
         pcl::removeNaNFromPointCloud(*cloud, *cloud, indices);
     }
+    CLOG(LINFO) << "Converted points: " << cloud->size();
     out_cloud_xyz.write(cloud);
 }
 

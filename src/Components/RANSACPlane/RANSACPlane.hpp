@@ -80,6 +80,7 @@ protected:
 
 	// Input data streams
 	Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZRGB>::Ptr > in_pcl;
+	Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZ>::Ptr > in_xyz;
 
 	// Output data streams
 	Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> out_outliers;
@@ -89,9 +90,13 @@ protected:
 
 	// Handlers
 	Base::EventHandler2 h_ransac;
+	Base::EventHandler2 h_ransac_xyz;
 	
 	// Handlers
 	void ransac();
+	void ransacxyz();
+
+	Base::Property<float> distance;
 
 };
 
