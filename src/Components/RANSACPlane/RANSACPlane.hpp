@@ -84,6 +84,8 @@ protected:
 	// Output data streams
 	Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> out_outliers;
 	Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> out_inliers;
+	
+	Base::DataStreamOut< std::vector<float> > out_model;
 
 	// Handlers
 	Base::EventHandler2 h_ransac;

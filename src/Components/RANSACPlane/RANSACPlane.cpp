@@ -30,6 +30,7 @@ void RANSACPlane::prepareInterface() {
 	registerStream("in_pcl", &in_pcl);
 	registerStream("out_outliers", &out_outliers);
 	registerStream("out_inliers", &out_inliers);
+	registerStream("out_model", &out_model);
 	// Register handlers
 	h_ransac.setup(boost::bind(&RANSACPlane::ransac, this));
 	registerHandler("ransac", &h_ransac);
@@ -95,6 +96,13 @@ void RANSACPlane::ransac() {
 	extract.setNegative(true);
 	extract.filter(*cloud_outliers);
 
+	std::vector<float> model;
+	model.push_back(coefficients->values[0]);
+	model.push_back(coefficients->values[1]);
+	model.push_back(coefficients->values[2]);
+	model.push_back(coefficients->values[3]);
+	out_model.write(model);
+	
 	out_outliers.write(cloud_outliers);
 	out_inliers.write(cloud_inliers);
 }
