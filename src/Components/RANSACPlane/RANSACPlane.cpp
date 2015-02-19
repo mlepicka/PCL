@@ -136,6 +136,7 @@ void RANSACPlane::ransacxyz() {
 
 	if (inliers->indices.size() == 0) {
 		CLOG(LERROR) << "Could not estimate a planar model for the given dataset.";
+		return;
 	}
 
 	CLOG(LINFO) << "Model coefficients: " << coefficients->values[0] << " "
