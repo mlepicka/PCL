@@ -67,14 +67,12 @@ protected:
 
 
 	// Input data streams
-	Base::DataStreamIn<std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> > in_clouds;		
-
-	// Handlers
-	Base::EventHandler2 h_on_clouds;
-	Base::EventHandler2 h_on_spin;
+    Base::DataStreamIn<std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> > in_clouds;
+    Base::DataStreamIn<std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> > in_projections;
 
 	// Handlers
 	void on_clouds();
+    void on_projections();
 	void on_spin();
 	
 	// Property enabling to change the name of displayed window.
@@ -85,7 +83,20 @@ protected:
 	pcl::visualization::PCLVisualizer * viewer;
 	
 	
-	int count;
+    int count;
+
+    const unsigned char colors[ 10 ][ 3 ] = {
+        { 255, 255, 255 },
+        { 255, 0, 0 },
+        { 0, 255, 0 },
+        { 0, 255, 255 },
+        { 255, 255, 0 },
+        { 255, 0, 255 },
+        { 255, 128, 0 },
+        { 128, 0, 255 },
+        { 0, 0, 255 },
+        { 128, 128, 128 }
+    };
 
 };
 
