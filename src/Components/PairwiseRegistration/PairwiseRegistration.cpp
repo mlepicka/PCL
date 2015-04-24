@@ -16,20 +16,26 @@
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/surface/mls.h>
 #include <pcl/common/transforms.h>
+#include <pcl/registration/icp.h>
+//#include <pcl/registration/icp_nl.h>
 
 namespace Processors {
 namespace PairwiseRegistration {
 
 PairwiseRegistration::PairwiseRegistration(const std::string & name) :
-	Base::Component(name) , 
-	negative("negative", false),
-	StddevMulThresh("StddevMulThresh", 1.0),
-	MeanK("MeanK", 50)
+	Base::Component(name), 
+	prop_ICP("Mode.ICP",1),
+	prop_ICP_MaxCorrespondenceDistance("ICP.MaxCorrespondenceDistance",0.0001),
+	prop_ICP_MaximumIterations("ICP.MaximumIterations",2000),
+	prop_ICP_TransformationEpsilon("ICP.TransformationEpsilon",1e-8),
+	prop_ICP_EuclideanFitnessEpsilon("ICP.EuclideanFitnessEpsilon",0.1)
 {
-	registerProperty(negative);
-	registerProperty(StddevMulThresh);
-	registerProperty(MeanK);
-
+	// Register ICP properties.
+	registerProperty(prop_ICP);
+	registerProperty(prop_ICP_MaxCorrespondenceDistance);
+	registerProperty(prop_ICP_MaximumIterations);
+	registerProperty(prop_ICP_TransformationEpsilon);
+	registerProperty(prop_ICP_EuclideanFitnessEpsilon);
 }
 
 PairwiseRegistration::~PairwiseRegistration() {
@@ -49,7 +55,8 @@ void PairwiseRegistration::prepareInterface() {
 }
 
 bool PairwiseRegistration::onInit() {
-
+	// Init prev cloud.
+	previous_cloud_xyzrgb = pcl::PointCloud<pcl::PointXYZRGB>::Ptr (new pcl::PointCloud<pcl::PointXYZRGB>);
 	return true;
 }
 
@@ -89,6 +96,8 @@ void  PairwiseRegistration::registration_xyz(Types::HomogMatrix hm_){
 
 	// Return resulting transformation XYZ.
 	out_transformation_xyzrgb.write(hm_);
+
+	CLOG(LERROR) << "PairwiseRegistration::registration_xyz NOT IMPLEMENTED!";
 }
 
 void  PairwiseRegistration::registration_xyzrgb(Types::HomogMatrix hm_){
@@ -96,11 +105,62 @@ void  PairwiseRegistration::registration_xyzrgb(Types::HomogMatrix hm_){
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = in_cloud_xyzrgb.read();
 
 	// Apply initial transformation.
-//	pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_cloud (new pcl::PointCloud<pcl::PointXYZ> ());
-//	pcl::transformPointCloud (*cloud, *cloud, hm_.getElements());
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_cloud_xyzrgb (new pcl::PointCloud<pcl::PointXYZRGB> ());
+	pcl::transformPointCloud (*cloud, *transformed_cloud_xyzrgb, hm_.getElements());
 
-	// Return resulting transformation XYZRGB.
-	out_transformation_xyzrgb.write(hm_);
+	/// Previous cloud empty - initialization.
+	if (previous_cloud_xyzrgb->empty ()) {
+		CLOG(LERROR) << " NO PREV CLOUD";
+
+		// Rebember previous cloud.
+		pcl::copyPointCloud<pcl::PointXYZRGB> (*transformed_cloud_xyzrgb, *previous_cloud_xyzrgb);
+
+		// Return initial transformation XYZRGB.
+		out_transformation_xyzrgb.write(hm_);
+		return;
+	}//: if	
+
+	// Perform pairwise registration.
+
+	if (prop_ICP) {
+		// Use ICP to get "better" transformation.
+		pcl::IterativeClosestPoint<pcl::PointXYZRGB, pcl::PointXYZRGB> icp;
+
+		// Set the max correspondence distance to 5cm (e.g., correspondences with higher distances will be ignored)
+		icp.setMaxCorrespondenceDistance (prop_ICP_MaxCorrespondenceDistance);
+		// Set the maximum number of iterations (criterion 1)
+		icp.setMaximumIterations (prop_ICP_MaximumIterations);
+		// Set the transformation epsilon (criterion 2)
+		icp.setTransformationEpsilon (prop_ICP_TransformationEpsilon);
+		// Set the euclidean distance difference epsilon (criterion 3)
+		icp.setEuclideanFitnessEpsilon (prop_ICP_EuclideanFitnessEpsilon);
+
+		icp.setInputSource(previous_cloud_xyzrgb);
+		icp.setInputTarget(transformed_cloud_xyzrgb);
+		pcl::PointCloud<pcl::PointXYZRGB>::Ptr Final (new pcl::PointCloud<pcl::PointXYZRGB>());
+		icp.align(*Final);
+		CLOG(LINFO) << "ICP has converged:" << icp.hasConverged() << " score: " << icp.getFitnessScore();
+
+		// Get the transformation from target to source.
+		Eigen::Matrix4f icp_trans = icp.getFinalTransformation().inverse();
+
+		CLOG(LINFO) << "icp_trans:\n" << icp_trans;
+
+		Types::HomogMatrix result;
+		result.setElements(hm_.getElements()*icp_trans);
+
+		// Rebember previous cloud.
+		pcl::copyPointCloud<pcl::PointXYZRGB> (*transformed_cloud_xyzrgb, *previous_cloud_xyzrgb);
+
+		// Return resulting transformation XYZRGB.
+		out_transformation_xyzrgb.write(result);
+	} else {
+		// Rebember previous cloud.
+		pcl::copyPointCloud<pcl::PointXYZRGB> (*transformed_cloud_xyzrgb, *previous_cloud_xyzrgb);
+
+		// Return initial transformation XYZRGB.
+		out_transformation_xyzrgb.write(hm_);
+	}//: else
 }
 
 

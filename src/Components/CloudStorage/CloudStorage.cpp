@@ -42,7 +42,8 @@ void CloudStorage::prepareInterface() {
 
 	// Register button-triggered handlers.
 	registerHandler("Add cloud", boost::bind(&CloudStorage::onAddCloudButtonPressed, this));
-	registerHandler("Remove last cloud", boost::bind(&CloudStorage::onAddCloudButtonPressed, this));
+
+	registerHandler("Remove last cloud", boost::bind(&CloudStorage::onRemoveLastCloudButtonPressed, this));
 
 	// Register externally-triggered handler.
 	registerHandler("onAddCloudTriggered", boost::bind(&CloudStorage::onAddCloudTriggered, this));
@@ -117,24 +118,27 @@ void CloudStorage::add_cloud_to_storage(){
 		if(in_transformation.empty()){
 			throw exception();
 		}
-		CLOG(LNOTICE) << "Adding transformation to storage";
+		CLOG(LINFO) << "Adding transformation to storage";
 		hm = in_transformation.read();
-		transformations.push_back(hm);
+		// Add only if any of the clouds is present!
+		if (!in_cloud_xyz.empty() || !in_cloud_xyzrgb.empty())
+			transformations.push_back(hm);
 
-		// Try to align XYZ.
+		// Try to add XYZ.
 		if(!in_cloud_xyz.empty()){
-			CLOG(LNOTICE) << "Adding XYZ cloud to storage";
+			CLOG(LINFO) << "Adding XYZ cloud to storage";
 			cloud_xyz = in_cloud_xyz.read();
 			clouds_xyz.push_back(cloud_xyz);
 		}//: if
 
-		// Try to align XYZRGB.
+		// Try to add XYZRGB.
 		if(!in_cloud_xyzrgb.empty()){
-			CLOG(LNOTICE) << "Adding XYZRGB cloud to storage";
+			CLOG(LINFO) << "Adding XYZRGB cloud to storage";
 			cloud_xyzrgb = in_cloud_xyzrgb.read();
 			clouds_xyzrgb.push_back(cloud_xyzrgb);
 		}//: if
 
+	CLOG(LNOTICE) << "ADD: transformations.size(): "<< transformations.size() << " clouds_xyz.size(): "<< clouds_xyz.size() << " clouds_xyzrgb.size(): "<< clouds_xyzrgb.size();
 	} catch (...) {
 		CLOG(LERROR) << "Cannot add matrix to store - cloud transformation is required";
 	}//: catch
@@ -145,6 +149,14 @@ void  CloudStorage::remove_last_cloud_to_storage(){
 	CLOG(LTRACE) << "CloudStorage::remove_last_cloud_to_storage";
 	// Reset flag.
 	remove_last_cloud_flag = false;
+
+	if (!transformations.empty())
+		transformations.pop_back();
+	if(!clouds_xyz.empty())
+		clouds_xyz.pop_back();
+	if(!clouds_xyzrgb.empty())
+		clouds_xyzrgb.pop_back();
+	CLOG(LNOTICE) << "REM: transformations.size(): "<< transformations.size() << " clouds_xyz.size(): "<< clouds_xyz.size() << " clouds_xyzrgb.size(): "<< clouds_xyzrgb.size();
 }
 
 
@@ -157,15 +169,15 @@ void  CloudStorage::publish_merged_clouds(){
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr merged_cloud_xyzrgb (new pcl::PointCloud<pcl::PointXYZRGB>);
 
 	// Check size of vector of transformations.
-	if (transformations.size() < 1) {
-		CLOG(LNOTICE) << "Vector of transformations is empty";
+/*	if (transformations.size() < 1) {
+		CLOG(LINFO) << "Vector of transformations is empty";
 		return;
-	}//: if
+	}//: if*/
 
 
 	// Merge XYZ cloud - but earlier check size of vector of transformations.
 	if (transformations.size() != clouds_xyz.size()) {
-		CLOG(LNOTICE) << "Sizes of transformation and clouds_xyz vectors differ!";
+		CLOG(LINFO) << "Sizes of transformation and clouds_xyz vectors differ!";
 	} else {
 		for (int i = 0 ; i < transformations.size(); i++) {
 			// Get cloud.
@@ -183,7 +195,7 @@ void  CloudStorage::publish_merged_clouds(){
 
 	// Merge XYZRGB cloud - but earlier check size of vector of transformations.
 	if (transformations.size() != clouds_xyzrgb.size()) {
-		CLOG(LNOTICE) << "Sizes of transformation and clouds_xyzrgb vectors differ!";
+		CLOG(LINFO) << "Sizes of transformation and clouds_xyzrgb vectors differ!";
 	} else {
 		for (int i = 0 ; i < transformations.size(); i++) {
 			// Get cloud.

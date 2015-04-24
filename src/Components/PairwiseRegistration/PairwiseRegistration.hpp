@@ -84,10 +84,26 @@ protected:
 	/// Resulting transformation between XYZRGB clouds.
 	Base::DataStreamOut <Types::HomogMatrix> out_transformation_xyzrgb;
 
-	// Properties.	
-	Base::Property<bool> negative;
-	Base::Property<float> StddevMulThresh;
-	Base::Property<float> MeanK;
+	/// Previous cloud, to which the component will try to align.
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr previous_cloud_xyzrgb;
+
+	/****************** ICP PROPERTIES ***********************/
+
+	///  Property - use ICP.
+	Base::Property<bool> prop_ICP;
+
+	///  Property - ICP condition: max correspondence distance.
+	Base::Property<float> prop_ICP_MaxCorrespondenceDistance;
+
+	///  Property - ICP condition: maximum iterations.
+	Base::Property<int> prop_ICP_MaximumIterations;
+
+	///  Property - ICP condition: transformation epsilon.
+	Base::Property<double> prop_ICP_TransformationEpsilon;
+
+	///  Property - ICP condition: max correspondence distance.
+	Base::Property<float> prop_ICP_EuclideanFitnessEpsilon;
+
 	
 	/// Registration handler - activated when 
 	void pairwise_registration();
