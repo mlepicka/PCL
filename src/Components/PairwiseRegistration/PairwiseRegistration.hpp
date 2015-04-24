@@ -87,6 +87,9 @@ protected:
 	/// Previous cloud, to which the component will try to align.
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr previous_cloud_xyzrgb;
 
+	/// Trigger - used for storing cloud as previous.
+	Base::DataStreamIn<Base::UnitType, Base::DataStreamBuffer::Newest> in_store_previous_cloud_trigger;
+
 	/****************** ICP PROPERTIES ***********************/
 
 	///  Property - use ICP.
@@ -113,6 +116,16 @@ protected:
 
 	/// Aligns XYZRGB clouds.
 	void registration_xyzrgb(Types::HomogMatrix hm_);
+
+	/// Event handler function - store cloud as previous.
+	void onStorePreviousButtonPressed();
+
+	/// Event handler function - store cloud as previous, externally triggered version.
+	void onStorePreviousCloudTriggered();
+
+private:
+	/// Flag indicating whether the processed cloud should stored as previous (i.e. to which the registration will be made in the next step).
+	bool store_previous_cloud_flag;
 
 };
 

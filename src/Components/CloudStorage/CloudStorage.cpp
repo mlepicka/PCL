@@ -55,6 +55,9 @@ void CloudStorage::prepareInterface() {
 }
 
 bool CloudStorage::onInit() {
+	// Init flags.
+	add_cloud_flag = false;
+	remove_last_cloud_flag = false;
 	return true;
 }
 
@@ -140,7 +143,7 @@ void CloudStorage::add_cloud_to_storage(){
 
 	CLOG(LNOTICE) << "ADD: transformations.size(): "<< transformations.size() << " clouds_xyz.size(): "<< clouds_xyz.size() << " clouds_xyzrgb.size(): "<< clouds_xyzrgb.size();
 	} catch (...) {
-		CLOG(LERROR) << "Cannot add matrix to store - cloud transformation is required";
+		CLOG(LERROR) << "Cannot add clouds to storage - cloud transformation is required";
 	}//: catch
 }
 

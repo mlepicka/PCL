@@ -46,17 +46,28 @@ void PairwiseRegistration::prepareInterface() {
 	registerStream("in_cloud_xyz", &in_cloud_xyz);
 	registerStream("in_cloud_xyzrgb", &in_cloud_xyzrgb);
 	registerStream("in_transformation", &in_transformation);
+	registerStream("in_store_previous_cloud_trigger", &in_store_previous_cloud_trigger);
 	registerStream("out_transformation_xyz", &out_transformation_xyz);
 	registerStream("out_transformation_xyzrgb", &out_transformation_xyzrgb);
 
 	// Register handlers
 	registerHandler("pairwise_registration", boost::bind(&PairwiseRegistration::pairwise_registration, this));
 	addDependency("pairwise_registration", &in_transformation);
+
+	// Register button-triggered handlers.
+	registerHandler("Store previous cloud", boost::bind(&PairwiseRegistration::onStorePreviousButtonPressed, this));
+
+
+	// Register externally-triggered handler.
+	registerHandler("onStorePreviousCloudTriggered", boost::bind(&PairwiseRegistration::onStorePreviousCloudTriggered, this));
+	addDependency("onStorePreviousCloudTriggered", &in_store_previous_cloud_trigger);
 }
 
 bool PairwiseRegistration::onInit() {
 	// Init prev cloud.
 	previous_cloud_xyzrgb = pcl::PointCloud<pcl::PointXYZRGB>::Ptr (new pcl::PointCloud<pcl::PointXYZRGB>);
+	// Init flag.
+	store_previous_cloud_flag = false;
 	return true;
 }
 
@@ -71,6 +82,18 @@ bool PairwiseRegistration::onStop() {
 bool PairwiseRegistration::onStart() {
 	return true;
 }
+
+void PairwiseRegistration::onStorePreviousButtonPressed(){
+	CLOG(LDEBUG) << "PairwiseRegistration::onStorePreviousButtonPressed";
+	store_previous_cloud_flag = true;
+}
+
+void PairwiseRegistration::onStorePreviousCloudTriggered(){
+	CLOG(LDEBUG) << "PairwiseRegistration::onStorePreviousCloudTriggered";
+	in_store_previous_cloud_trigger.read();
+	store_previous_cloud_flag = true;
+}
+
 
 void PairwiseRegistration::pairwise_registration() {
 	CLOG(LTRACE) << "PairwiseRegistration::pairwise_registration";
@@ -110,10 +133,13 @@ void  PairwiseRegistration::registration_xyzrgb(Types::HomogMatrix hm_){
 
 	/// Previous cloud empty - initialization.
 	if (previous_cloud_xyzrgb->empty ()) {
-		CLOG(LERROR) << " NO PREV CLOUD";
+		CLOG(LINFO) << "Adding first cloud";
 
-		// Rebember previous cloud.
-		pcl::copyPointCloud<pcl::PointXYZRGB> (*transformed_cloud_xyzrgb, *previous_cloud_xyzrgb);
+		// Remember previous cloud.
+		if (store_previous_cloud_flag){
+			store_previous_cloud_flag = false;
+			pcl::copyPointCloud<pcl::PointXYZRGB> (*transformed_cloud_xyzrgb, *previous_cloud_xyzrgb);
+		}//: if
 
 		// Return initial transformation XYZRGB.
 		out_transformation_xyzrgb.write(hm_);
@@ -149,21 +175,25 @@ void  PairwiseRegistration::registration_xyzrgb(Types::HomogMatrix hm_){
 		Types::HomogMatrix result;
 		result.setElements(hm_.getElements()*icp_trans);
 
-		// Rebember previous cloud.
-		pcl::copyPointCloud<pcl::PointXYZRGB> (*transformed_cloud_xyzrgb, *previous_cloud_xyzrgb);
+		// Remember previous cloud.
+		if (store_previous_cloud_flag){
+			store_previous_cloud_flag = false;
+			pcl::copyPointCloud<pcl::PointXYZRGB> (*transformed_cloud_xyzrgb, *previous_cloud_xyzrgb);
+		}//: if
 
 		// Return resulting transformation XYZRGB.
 		out_transformation_xyzrgb.write(result);
 	} else {
-		// Rebember previous cloud.
-		pcl::copyPointCloud<pcl::PointXYZRGB> (*transformed_cloud_xyzrgb, *previous_cloud_xyzrgb);
+		// Remember previous cloud.
+		if (store_previous_cloud_flag){
+			store_previous_cloud_flag = false;
+			pcl::copyPointCloud<pcl::PointXYZRGB> (*transformed_cloud_xyzrgb, *previous_cloud_xyzrgb);
+		}//: if
 
 		// Return initial transformation XYZRGB.
 		out_transformation_xyzrgb.write(hm_);
 	}//: else
 }
-
-
 
 
 } //: namespace PairwiseRegistration
