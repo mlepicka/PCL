@@ -18,14 +18,14 @@ namespace Processors {
 namespace CloudViewer {
 
 CloudViewer::CloudViewer(const std::string & name) :
-		Base::Component(name),
-		prop_window_name("window_name",std::string("3D PC Viewer")),
-		prop_coordinate_system("coordinate_system",boost::bind(&CloudViewer::onCSShowClick, this, _2), true),
-		prop_background_color("background_color", boost::bind(&CloudViewer::onBackgroundColorChange, this, _2), std::string("0,0,0")),
-		normals_scale("normals.scale", 0.1),
-		normals_level("normals.level", 1),
-		prop_sift_size("sift.size", boost::bind(&CloudViewer::onSIFTSizeChange, this, _2), 1),
-		prop_sift_color("sift.color", boost::bind(&CloudViewer::onSIFTColorChange, this, _2), std::string("255,0,0"))
+	Base::Component(name),
+	prop_window_name("window_name",std::string("3D PC Viewer")),
+	prop_coordinate_system("coordinate_system",boost::bind(&CloudViewer::onCSShowClick, this, _2), true),
+	prop_background_color("background_color", boost::bind(&CloudViewer::onBackgroundColorChange, this, _2), std::string("0,0,0")),
+	normals_scale("normals.scale", 0.1),
+	normals_level("normals.level", 1),
+	prop_sift_size("sift.size", boost::bind(&CloudViewer::onSIFTSizeChange, this, _2), 1),
+	prop_sift_color("sift.color", boost::bind(&CloudViewer::onSIFTColorChange, this, _2), std::string("255,0,0"))
 
 {
 	registerProperty(prop_window_name);
@@ -116,13 +116,11 @@ void CloudViewer::onSIFTColorChange(std::string color_) {
 void CloudViewer::onSIFTSizeChange(int size_){
 	CLOG(LDEBUG) << "CloudViewer::onSIFTSizeChange size=" << size_;
 	try {
-
-	// Change SIFT size.
-	if (viewer)
-		viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size_, "xyzsift");
+		// Change SIFT size.
+		if (viewer)
+			viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size_, "xyzsift");
 	} catch (...) {
-		CLOG(LWARNING)
-				<< "CloudViewer::onSIFTSizeChange failed";
+		CLOG(LWARNING) << "CloudViewer::onSIFTSizeChange failed";
 	}
 }
 
