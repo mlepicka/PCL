@@ -67,37 +67,38 @@ protected:
 	 */
 	bool onStop();
 
-	// Data streams
-    Base::DataStreamIn<cv::Mat> in_depth;
-	Base::DataStreamIn<cv::Mat> in_color;
-	Base::DataStreamIn<cv::Mat> in_mask;
-	Base::DataStreamIn<Types::CameraInfo> in_camera_info;
-	Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZ>::Ptr > out_cloud_xyz;
-	Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZRGB>::Ptr > out_cloud_xyzrgb;
-    Base::DataStreamIn<cv::Mat> in_depth_xyz;
-    Base::DataStreamIn<cv::Mat> in_rgb_stereo;
+	/// Input data stream containing depth map.
+	Base::DataStreamIn<cv::Mat, Base::DataStreamBuffer::Newest> in_depth;
 
-	// Handlers
-	Base::EventHandler2 h_process_depth;
-	Base::EventHandler2 h_process_depth_mask;
-	Base::EventHandler2 h_process_depth_mask_color;
-	Base::EventHandler2 h_process_depth_color;
-    Base::EventHandler2 h_process_depth_xyz;
-    Base::EventHandler2 h_process_depth_xyz_rgb_stereo;
-    Base::EventHandler2 h_process_depth_xyz_mask;
-    Base::EventHandler2 h_process_depth_xyz_rgb_stereo_mask;
-	// Handlers
+	/// Input data stream containing depth map transformed to Cartesian coordinates (image with XYZ coordinates).
+	Base::DataStreamIn<cv::Mat, Base::DataStreamBuffer::Newest> in_depth_xyz;
+
+	/// Input data stream containing colour image.
+	Base::DataStreamIn<cv::Mat, Base::DataStreamBuffer::Newest> in_color;
+
+	/// Input data stream containing mask.
+	Base::DataStreamIn<cv::Mat, Base::DataStreamBuffer::Newest> in_mask;
+
+	// Input data port with camera info.
+	Base::DataStreamIn<Types::CameraInfo, Base::DataStreamBuffer::Newest> in_camera_info;
+
+	/// Output data port with XYZ cloud.
+	Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZ>::Ptr > out_cloud_xyz;
+
+	/// Output data port with XYZRGB cloud.
+	Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZRGB>::Ptr > out_cloud_xyzrgb;
+
+	// Handler functions.
 	void process_depth_mask();
 	void process_depth();
-
 	void process_depth_mask_color();
 	void process_depth_color();
 	
-    void process_depth_xyz();
-    void process_depth_xyz_rgb_stereo();
+	void process_depth_xyz();
+	void process_depth_xyz_color();
 
-    void process_depth_xyz_mask();
-    void process_depth_xyz_rgb_stereo_mask();
+	void process_depth_xyz_mask();
+	void process_depth_xyz_color_mask();
 
 	Base::Property<bool> prop_remove_nan;
 };
