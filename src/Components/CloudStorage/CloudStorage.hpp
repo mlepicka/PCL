@@ -97,6 +97,8 @@ protected:
 	///  Property - store first cloud.
 	Base::Property<bool> prop_store_first_cloud;
 
+	///  Property - overwrite last cloud.
+	Base::Property<bool> prop_overwrite_last_cloud;
 	
 	/// Registration handler - activated when 
 	void pairwise_registration();

@@ -22,10 +22,12 @@ namespace CloudStorage {
 
 CloudStorage::CloudStorage(const std::string & name) :
 	Base::Component(name),
-	prop_store_first_cloud("StoreFirstCloud",true)
+	prop_store_first_cloud("StoreFirstCloud",true),
+	prop_overwrite_last_cloud("OverwriteLastCloud",false)
 {
 	// Register properties.
 	registerProperty(prop_store_first_cloud);
+	registerProperty(prop_overwrite_last_cloud);
 }
 
 CloudStorage::~CloudStorage() {
@@ -159,6 +161,9 @@ void CloudStorage::add_cloud_to_storage(){
 		if(!in_cloud_xyz.empty()){
 			CLOG(LINFO) << "Adding XYZ cloud to storage";
 			cloud_xyz = in_cloud_xyz.read();
+			// Overwrite last cloud.
+			if (prop_overwrite_last_cloud && !clouds_xyz.empty())
+				clouds_xyz.pop_back();
 			clouds_xyz.push_back(cloud_xyz);
 		}//: if
 
@@ -166,6 +171,9 @@ void CloudStorage::add_cloud_to_storage(){
 		if(!in_cloud_xyzrgb.empty()){
 			CLOG(LINFO) << "Adding XYZRGB cloud to storage";
 			cloud_xyzrgb = in_cloud_xyzrgb.read();
+			// Overwrite last cloud.
+			if (prop_overwrite_last_cloud && !clouds_xyzrgb.empty())
+				clouds_xyzrgb.pop_back();
 			clouds_xyzrgb.push_back(cloud_xyzrgb);
 		}//: if
 
