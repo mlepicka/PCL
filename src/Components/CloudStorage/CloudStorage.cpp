@@ -21,9 +21,11 @@ namespace Processors {
 namespace CloudStorage {
 
 CloudStorage::CloudStorage(const std::string & name) :
-	Base::Component(name)
+	Base::Component(name),
+	prop_store_first_cloud("StoreFirstCloud",true)
 {
-
+	// Register properties.
+	registerProperty(prop_store_first_cloud);
 }
 
 CloudStorage::~CloudStorage() {
@@ -56,8 +58,13 @@ void CloudStorage::prepareInterface() {
 
 bool CloudStorage::onInit() {
 	// Init flags.
-	add_cloud_flag = false;
 	remove_last_cloud_flag = false;
+
+	if (prop_store_first_cloud)
+		add_cloud_flag = true;
+	else
+		add_cloud_flag = false;
+
 	return true;
 }
 

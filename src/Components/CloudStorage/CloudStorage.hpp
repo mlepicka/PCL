@@ -94,7 +94,9 @@ protected:
 	Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> out_cloud_xyzrgb;
 
 
-	// Properties.	
+	///  Property - store first cloud.
+	Base::Property<bool> prop_store_first_cloud;
+
 	
 	/// Registration handler - activated when 
 	void pairwise_registration();

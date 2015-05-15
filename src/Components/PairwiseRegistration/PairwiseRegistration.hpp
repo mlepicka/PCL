@@ -90,24 +90,31 @@ protected:
 	/// Trigger - used for storing cloud as previous.
 	Base::DataStreamIn<Base::UnitType, Base::DataStreamBuffer::Newest> in_store_previous_cloud_trigger;
 
+
+	///  Property - store first cloud.
+	Base::Property<bool> prop_store_first_cloud;
+
 	/****************** ICP PROPERTIES ***********************/
 
 	///  Property - use ICP.
 	Base::Property<bool> prop_ICP;
 
-	///  Property - ICP condition: max correspondence distance.
+	///  Property - ICP condition: the max correspondence distance (correspondences with higher distances will be ignored).
 	Base::Property<float> prop_ICP_MaxCorrespondenceDistance;
 
-	///  Property - ICP condition: maximum iterations.
+	///  Property - ICP condition: maximum number of iterations.
 	Base::Property<int> prop_ICP_MaximumIterations;
 
-	///  Property - ICP condition: transformation epsilon.
+	///  Property - ICP condition: the epsilon (difference) between the previous transformation and the current estimated transformation is smaller than an user imposed value.
 	Base::Property<double> prop_ICP_TransformationEpsilon;
 
-	///  Property - ICP condition: max correspondence distance.
+	///  Property - ICP condition: the sum of Euclidean squared errors is smaller than a user defined threshold.
 	Base::Property<float> prop_ICP_EuclideanFitnessEpsilon;
 
-	
+	///  Property - use ICP colour.
+	Base::Property<bool> prop_ICP_colour;
+
+
 	/// Registration handler - activated when 
 	void pairwise_registration();
 
