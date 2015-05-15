@@ -13,11 +13,16 @@
 #include <boost/bind.hpp>
 
 //#include <pcl/impl/point_types.hpp>
+#include <pcl/features/normal_3d.h>
+
+//#include <pcl/impl/point_types.hpp>
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/surface/mls.h>
 #include <pcl/common/transforms.h>
 #include <pcl/registration/icp.h>
 //#include <pcl/registration/icp_nl.h>
+
+const double NORMALS_RADIUS = 0.04;
 
 // Colour ICP.
 #include "Types/CorrespondenceEstimationColor.hpp"
@@ -25,6 +30,7 @@
 
 namespace Processors {
 namespace PairwiseRegistration {
+
 
 PairwiseRegistration::PairwiseRegistration(const std::string & name) :
 	Base::Component(name),
@@ -247,17 +253,20 @@ void  PairwiseRegistration::registration_xyzrgb(Types::HomogMatrix hm_){
 	}//: else
 }
 
-/*
-PointCloud<Normal>::Ptr getNormals( PointCloud<PointXYZRGB>::Ptr incloud ) {
+pcl::PointCloud<pcl::Normal>::Ptr getNormals( pcl::PointCloud<pcl::PointXYZRGB>::Ptr incloud ) {
 
-        PointCloud<Normal>::Ptr normalsPtr = PointCloud<Normal>::Ptr (new PointCloud<Normal>);
-        NormalEstimation<PointXYZRGB, Normal> norm_est;
+        pcl::PointCloud<pcl::Normal>::Ptr normalsPtr = pcl::PointCloud<pcl::Normal>::Ptr (new pcl::PointCloud<pcl::Normal>);
+        pcl::NormalEstimation<pcl::PointXYZRGB, pcl::Normal> norm_est;
         norm_est.setInputCloud( incloud );
         norm_est.setRadiusSearch( NORMALS_RADIUS );
         norm_est.compute( *normalsPtr );
         return normalsPtr;
 } 
 
+
+
+
+/*
 http://www.pcl-users.org/Very-poor-registration-results-td3569265.html
 
 http://pointclouds.org/documentation/tutorials/template_alignment.php#template-alignment
