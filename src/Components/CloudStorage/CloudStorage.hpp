@@ -72,7 +72,7 @@ protected:
 	Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZ>::Ptr, Base::DataStreamBuffer::Newest> in_cloud_xyz;
 
 	/// Input data stream containing XYZRGB cloud.
-	Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZRGB>::Ptr, Base::DataStreamBuffer::Newest> in_cloud_xyzrgb;
+	Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZRGB>::Ptr, Base::DataStreamBuffer::Newest > in_cloud_xyzrgb;
 
 	/// Initial transformation between clouds.
 	Base::DataStreamIn<Types::HomogMatrix, Base::DataStreamBuffer::Newest> in_transformation;
@@ -108,22 +108,31 @@ protected:
 	void registration_xyzrgb(Types::HomogMatrix hm_);
 
 
-	/// Event handler function - adds point cloud to the store.
+
+	/// Event handler function - adds point cloud to the storage.
 	void onAddCloudButtonPressed();
 
-	/// Event handler function - adds point cloud to the store, externally triggered version.
+	/// Event handler function - adds point cloud to the storage, externally triggered version.
 	void onAddCloudTriggered();
 
-	/// Adds point cloud to the store.
+	/// Adds point cloud to the storage.
 	void add_cloud_to_storage();
 
 
 
-	/// Event handler function - removes last point cloud from store.
+	/// Event handler function - removes last point cloud from storage.
 	void onRemoveLastCloudButtonPressed();
 
-	/// Removes last point cloud from store.
+	/// Removes last point cloud from storage.
 	void remove_last_cloud_to_storage();
+
+
+
+	/// Event handler function - clears storage.
+	void onClearStorageButtonPressed();
+
+	/// Clears the storage.
+	void clear_storage();
 
 
 	/// Main storage management function.
@@ -133,11 +142,14 @@ protected:
 	void publish_merged_clouds();
 
 private:
-	/// Flag indicating whether the cloud should be added to store.
+	/// Flag indicating whether the cloud should be added to storage.
 	bool add_cloud_flag;
 
 	/// Flag indicating that last cloud should be removed.
 	bool remove_last_cloud_flag;
+
+	/// Flag indicating that the storage should be cleared (remove all clouds).
+	bool clear_storage_flag;
 
 
 	// Vector containing transformations - poses wrt to the first cloud. First transformation is an identity matrix.

@@ -157,13 +157,8 @@ void  PairwiseRegistration::registration_xyzrgb(Types::HomogMatrix hm_){
 		return;
 	}//: if	
 
-//	CLOG(LERROR) << "DUPA!";
 	// Perform pairwise registration.
 	if (prop_ICP) {
-		CLOG(LERROR) << "zwracam i wychodzę";
-		out_transformation_xyzrgb.write(hm_);
-		return;
-
 		if (prop_ICP_colour) {
 			CLOG(LINFO) << "Using ICP colour for registration refinement";
 			// Use colour ICP to get "better" transformation.

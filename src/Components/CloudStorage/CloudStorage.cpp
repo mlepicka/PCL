@@ -44,8 +44,8 @@ void CloudStorage::prepareInterface() {
 
 	// Register button-triggered handlers.
 	registerHandler("Add cloud", boost::bind(&CloudStorage::onAddCloudButtonPressed, this));
-
 	registerHandler("Remove last cloud", boost::bind(&CloudStorage::onRemoveLastCloudButtonPressed, this));
+	registerHandler("Clear storage", boost::bind(&CloudStorage::onClearStorageButtonPressed, this));
 
 	// Register externally-triggered handler.
 	registerHandler("onAddCloudTriggered", boost::bind(&CloudStorage::onAddCloudTriggered, this));
@@ -59,6 +59,7 @@ void CloudStorage::prepareInterface() {
 bool CloudStorage::onInit() {
 	// Init flags.
 	remove_last_cloud_flag = false;
+	clear_storage_flag = false;
 
 	if (prop_store_first_cloud)
 		add_cloud_flag = true;
@@ -92,9 +93,16 @@ void CloudStorage::onAddCloudTriggered(){
 	add_cloud_flag = true;
 }
 
+
 void CloudStorage::onRemoveLastCloudButtonPressed(){
 	CLOG(LTRACE) << "CloudStorage::onRemoveLastCloudButtonPressed";
 	remove_last_cloud_flag = true;
+}
+
+
+void CloudStorage::onClearStorageButtonPressed(){
+	CLOG(LTRACE) << "CloudStorage::onClearStorageButtonPressed";
+	clear_storage_flag = true;
 }
 
 
@@ -109,14 +117,25 @@ void CloudStorage::update_storage(){
 	if (add_cloud_flag)
 		add_cloud_to_storage();
 
+	// Clear storage.
+	if (clear_storage_flag)
+		clear_storage();
+
 	// Publish cloud merged from currently possesed ones.
 	publish_merged_clouds();
 }
 
+void CloudStorage::clear_storage(){ 
+	CLOG(LTRACE) << "CloudStorage::clear_storage";
+	transformations.clear();
+	clouds_xyz.clear();
+	clouds_xyzrgb.clear();
+	// Reset flag.
+	clear_storage_flag = false;
+}
+
 void CloudStorage::add_cloud_to_storage(){ 
 	CLOG(LTRACE) << "CloudStorage::add_cloud_to_storage";
-	// Reset flag.
-	add_cloud_flag = false;
 
 	// Local variables.
 	Types::HomogMatrix hm;
@@ -124,15 +143,17 @@ void CloudStorage::add_cloud_to_storage(){
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_xyzrgb;
 
 	try{ 
-		// Read homogenous matrix.
-		if(in_transformation.empty()){
+		// Check homogenous matrix and add to storage only if any of the clouds is present!
+		if(in_transformation.empty() && (!in_cloud_xyz.empty() || !in_cloud_xyzrgb.empty())){
 			throw exception();
 		}
+
+		// Reset flag.
+		add_cloud_flag = false;
+
 		CLOG(LINFO) << "Adding transformation to storage";
 		hm = in_transformation.read();
-		// Add only if any of the clouds is present!
-		if (!in_cloud_xyz.empty() || !in_cloud_xyzrgb.empty())
-			transformations.push_back(hm);
+		transformations.push_back(hm);
 
 		// Try to add XYZ.
 		if(!in_cloud_xyz.empty()){
