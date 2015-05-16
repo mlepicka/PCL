@@ -111,11 +111,14 @@ protected:
 	///  Property - ICP condition: the sum of Euclidean squared errors is smaller than a user defined threshold.
 	Base::Property<float> prop_ICP_EuclideanFitnessEpsilon;
 
-	///  Property - use ICP colour.
+	///  Property - use colour in ICP.
 	Base::Property<bool> prop_ICP_colour;
 
+	///  Property - use normals in ICP.
+	Base::Property<bool> prop_ICP_normals;
 
-	/// Registration handler - activated when 
+
+	/// Registration handler.
 	void pairwise_registration();
 
 	/// Aligns XYZ clouds.

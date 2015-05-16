@@ -111,6 +111,16 @@ void CloudStorage::onClearStorageButtonPressed(){
 void CloudStorage::update_storage(){
 	CLOG(LTRACE) << "CloudStorage::update_storage";
 
+	// Overwrite last cloud.
+	if (prop_overwrite_last_cloud) {
+		// Check if something can be added - if so, remove last cloud.
+		if(!in_transformation.empty() && (!in_cloud_xyz.empty() || !in_cloud_xyzrgb.empty())){
+			remove_last_cloud_flag = true;
+			add_cloud_flag = true;
+		}//: if
+		// otherwise - do nothing.
+	}//: if
+
 	// Remove last clouds and transformation from storage.
 	if (remove_last_cloud_flag)
 		remove_last_cloud_to_storage();
@@ -118,6 +128,7 @@ void CloudStorage::update_storage(){
 	// Add received clouds and transformation to storage.
 	if (add_cloud_flag)
 		add_cloud_to_storage();
+
 
 	// Clear storage.
 	if (clear_storage_flag)
@@ -127,14 +138,6 @@ void CloudStorage::update_storage(){
 	publish_merged_clouds();
 }
 
-void CloudStorage::clear_storage(){ 
-	CLOG(LTRACE) << "CloudStorage::clear_storage";
-	transformations.clear();
-	clouds_xyz.clear();
-	clouds_xyzrgb.clear();
-	// Reset flag.
-	clear_storage_flag = false;
-}
 
 void CloudStorage::add_cloud_to_storage(){ 
 	CLOG(LTRACE) << "CloudStorage::add_cloud_to_storage";
@@ -146,7 +149,7 @@ void CloudStorage::add_cloud_to_storage(){
 
 	try{ 
 		// Check homogenous matrix and add to storage only if any of the clouds is present!
-		if(in_transformation.empty() && (!in_cloud_xyz.empty() || !in_cloud_xyzrgb.empty())){
+		if(in_transformation.empty() || (in_cloud_xyz.empty() && in_cloud_xyzrgb.empty())){
 			throw exception();
 		}
 
@@ -161,9 +164,6 @@ void CloudStorage::add_cloud_to_storage(){
 		if(!in_cloud_xyz.empty()){
 			CLOG(LINFO) << "Adding XYZ cloud to storage";
 			cloud_xyz = in_cloud_xyz.read();
-			// Overwrite last cloud.
-			if (prop_overwrite_last_cloud && !clouds_xyz.empty())
-				clouds_xyz.pop_back();
 			clouds_xyz.push_back(cloud_xyz);
 		}//: if
 
@@ -171,9 +171,6 @@ void CloudStorage::add_cloud_to_storage(){
 		if(!in_cloud_xyzrgb.empty()){
 			CLOG(LINFO) << "Adding XYZRGB cloud to storage";
 			cloud_xyzrgb = in_cloud_xyzrgb.read();
-			// Overwrite last cloud.
-			if (prop_overwrite_last_cloud && !clouds_xyzrgb.empty())
-				clouds_xyzrgb.pop_back();
 			clouds_xyzrgb.push_back(cloud_xyzrgb);
 		}//: if
 
@@ -196,6 +193,16 @@ void  CloudStorage::remove_last_cloud_to_storage(){
 	if(!clouds_xyzrgb.empty())
 		clouds_xyzrgb.pop_back();
 	CLOG(LNOTICE) << "REM: transformations.size(): "<< transformations.size() << " clouds_xyz.size(): "<< clouds_xyz.size() << " clouds_xyzrgb.size(): "<< clouds_xyzrgb.size();
+}
+
+
+void CloudStorage::clear_storage(){ 
+	CLOG(LTRACE) << "CloudStorage::clear_storage";
+	transformations.clear();
+	clouds_xyz.clear();
+	clouds_xyzrgb.clear();
+	// Reset flag.
+	clear_storage_flag = false;
 }
 
 

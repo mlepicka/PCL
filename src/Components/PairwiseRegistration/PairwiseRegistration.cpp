@@ -12,24 +12,66 @@
 
 #include <boost/bind.hpp>
 
-//#include <pcl/impl/point_types.hpp>
-#include <pcl/features/normal_3d.h>
 
-//#include <pcl/impl/point_types.hpp>
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/surface/mls.h>
 #include <pcl/common/transforms.h>
+// ICP
 #include <pcl/registration/icp.h>
-//#include <pcl/registration/icp_nl.h>
 
-const double NORMALS_RADIUS = 0.04;
+// ICP with normals
+#include <pcl/features/normal_3d.h>
+#include <pcl/registration/icp_nl.h>
 
-// Colour ICP.
+// ICP with colour
 #include "Types/CorrespondenceEstimationColor.hpp"
+
 
 
 namespace Processors {
 namespace PairwiseRegistration {
+
+const double NORMALS_RADIUS = 0.04;
+
+//convenient typedefs
+typedef pcl::PointXYZ PointT;
+typedef pcl::PointCloud<PointT> PointCloud;
+typedef pcl::PointNormal PointNormalT;
+typedef pcl::PointCloud<PointNormalT> PointCloudWithNormals;
+
+/*// Define a new point representation for < x, y, z, curvature >
+class MyPointRepresentation : public pcl::PointRepresentation <PointNormalT>
+{
+  using pcl::PointRepresentation<PointNormalT>::nr_dimensions_;
+public:
+  MyPointRepresentation ()
+  {
+    // Define the number of dimensions
+    nr_dimensions_ = 4;
+  }
+
+  // Override the copyToFloatArray method to define our feature vector
+  virtual void copyToFloatArray (const PointNormalT &p, float * out) const
+  {
+    // < x, y, z, curvature >
+    out[0] = p.x;
+    out[1] = p.y;
+    out[2] = p.z;
+    out[3] = p.curvature;
+  }
+};*/
+
+
+/*pcl::PointCloud<pcl::Normal>::Ptr getNormals( pcl::PointCloud<pcl::PointXYZRGB>::Ptr incloud ) {
+
+        pcl::PointCloud<pcl::Normal>::Ptr normalsPtr = pcl::PointCloud<pcl::Normal>::Ptr (new pcl::PointCloud<pcl::Normal>);
+        pcl::NormalEstimation<pcl::PointXYZRGB, pcl::Normal> norm_est;
+        norm_est.setInputCloud( incloud );
+        norm_est.setRadiusSearch( NORMALS_RADIUS );
+        norm_est.compute( *normalsPtr );
+        return normalsPtr;
+} 
+*/
 
 
 PairwiseRegistration::PairwiseRegistration(const std::string & name) :
@@ -40,7 +82,8 @@ PairwiseRegistration::PairwiseRegistration(const std::string & name) :
 	prop_ICP_MaximumIterations("ICP.MaximumIterations",50),
 	prop_ICP_TransformationEpsilon("ICP.TransformationEpsilon",1e-8),
 	prop_ICP_EuclideanFitnessEpsilon("ICP.EuclideanFitnessEpsilon",1),
-	prop_ICP_colour("ICP.UseColour",true)
+	prop_ICP_colour("ICP.UseColour",true),
+	prop_ICP_normals("ICP.UseNormals",true)
 {
 	// Register properties.
 	registerProperty(prop_store_first_cloud);
@@ -51,6 +94,7 @@ PairwiseRegistration::PairwiseRegistration(const std::string & name) :
 	registerProperty(prop_ICP_TransformationEpsilon);
 	registerProperty(prop_ICP_EuclideanFitnessEpsilon);
 	registerProperty(prop_ICP_colour);
+	registerProperty(prop_ICP_normals);
 }
 
 PairwiseRegistration::~PairwiseRegistration() {
@@ -165,9 +209,68 @@ void  PairwiseRegistration::registration_xyzrgb(Types::HomogMatrix hm_){
 
 	// Perform pairwise registration.
 	if (prop_ICP) {
-		if (prop_ICP_colour) {
-			CLOG(LINFO) << "Using ICP colour for registration refinement";
-			// Use colour ICP to get "better" transformation.
+		if (prop_ICP_colour && prop_ICP_normals) {
+			CLOG(LINFO) << "Using ICP with colour and normals for registration refinement";
+
+		} else if (prop_ICP_normals) {
+			CLOG(LINFO) << "Using ICP with normals for registration refinement";
+
+
+			// Compute surface normals and curvature
+			PointCloudWithNormals::Ptr previous_cloud_xyznormals (new PointCloudWithNormals);
+			PointCloudWithNormals::Ptr transformed_cloud_xyznormals (new PointCloudWithNormals);
+
+			pcl::NormalEstimation<pcl::PointXYZRGB, PointNormalT> norm_est;
+			pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB> ());
+			norm_est.setSearchMethod (tree);
+			norm_est.setKSearch (30);
+
+			// Compute normals for previous cloud.
+			norm_est.setInputCloud (previous_cloud_xyzrgb);
+			norm_est.compute (*previous_cloud_xyznormals);
+			pcl::copyPointCloud (*previous_cloud_xyzrgb, *previous_cloud_xyznormals);
+
+			norm_est.setInputCloud (transformed_cloud_xyzrgb);
+			norm_est.compute (*transformed_cloud_xyznormals);
+			pcl::copyPointCloud (*transformed_cloud_xyzrgb, *transformed_cloud_xyznormals);
+
+			// Use ICP with normals to get "better" transformation.
+			pcl::IterativeClosestPointNonLinear<pcl::PointNormal, pcl::PointNormal> icp;
+
+			// Set the max correspondence distance to 5cm (e.g., correspondences with higher distances will be ignored)
+			icp.setMaxCorrespondenceDistance (prop_ICP_MaxCorrespondenceDistance);
+			// Set the maximum number of iterations (criterion 1)
+			icp.setMaximumIterations (prop_ICP_MaximumIterations);
+			// Set the transformation epsilon (criterion 2)
+			icp.setTransformationEpsilon (prop_ICP_TransformationEpsilon);
+			// Set the euclidean distance difference epsilon (criterion 3)
+			icp.setEuclideanFitnessEpsilon (prop_ICP_EuclideanFitnessEpsilon);
+
+
+			// Set the point representation - x,y,z and curvature.
+			//icp.setPointRepresentation (boost::make_shared<const MyPointRepresentation> (point_representation));
+
+			icp.setInputSource (previous_cloud_xyznormals);
+			icp.setInputTarget (transformed_cloud_xyznormals);
+
+			pcl::PointCloud<pcl::PointNormal>::Ptr Final (new pcl::PointCloud<pcl::PointNormal>());
+			
+			// Align clouds.
+			icp.align(*Final);
+			CLOG(LINFO) << "ICP has converged:" << icp.hasConverged() << " score: " << icp.getFitnessScore();
+
+			// Get the transformation from target to source.
+			Eigen::Matrix4f icp_trans = icp.getFinalTransformation().inverse();
+			CLOG(LINFO) << "icp_trans:\n" << icp_trans;
+
+			// Set resulting transformation.
+			Types::HomogMatrix result;
+			result.setElements(hm_.getElements()*icp_trans);
+			out_transformation_xyzrgb.write(result);
+
+		} else if (prop_ICP_colour) {
+			CLOG(LINFO) << "Using ICP with colour for registration refinement";
+			// Use ICP with colour to get "better" transformation.
 			pcl::IterativeClosestPoint<pcl::PointXYZRGB, pcl::PointXYZRGB> icp;
 
 			// Set the max correspondence distance to 5cm (e.g., correspondences with higher distances will be ignored)
@@ -200,6 +303,7 @@ void  PairwiseRegistration::registration_xyzrgb(Types::HomogMatrix hm_){
 			Types::HomogMatrix result;
 			result.setElements(hm_.getElements()*icp_trans);
 			out_transformation_xyzrgb.write(result);
+
 		} else {
 			CLOG(LINFO) << "Using stantard ICP for registration refinement";
 			// Use ICP to get "better" transformation.
@@ -253,17 +357,6 @@ void  PairwiseRegistration::registration_xyzrgb(Types::HomogMatrix hm_){
 	}//: else
 }
 
-pcl::PointCloud<pcl::Normal>::Ptr getNormals( pcl::PointCloud<pcl::PointXYZRGB>::Ptr incloud ) {
-
-        pcl::PointCloud<pcl::Normal>::Ptr normalsPtr = pcl::PointCloud<pcl::Normal>::Ptr (new pcl::PointCloud<pcl::Normal>);
-        pcl::NormalEstimation<pcl::PointXYZRGB, pcl::Normal> norm_est;
-        norm_est.setInputCloud( incloud );
-        norm_est.setRadiusSearch( NORMALS_RADIUS );
-        norm_est.compute( *normalsPtr );
-        return normalsPtr;
-} 
-
-
 
 
 /*
@@ -272,21 +365,21 @@ http://www.pcl-users.org/Very-poor-registration-results-td3569265.html
 http://pointclouds.org/documentation/tutorials/template_alignment.php#template-alignment
 
   // Compute surface normals and curvature
-  PointCloudWithNormals::Ptr points_with_normals_src (new PointCloudWithNormals);
-  PointCloudWithNormals::Ptr points_with_normals_tgt (new PointCloudWithNormals);
+  PointCloudWithNormals::Ptr previous_cloud_xyznormals (new PointCloudWithNormals);
+  PointCloudWithNormals::Ptr transformed_cloud_xyznormals (new PointCloudWithNormals);
 
-  pcl::NormalEstimation<PointT, PointNormalT> norm_est;
+  pcl::NormalEstimation<PointT, pcl::PointNormal> norm_est;
   pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ> ());
   norm_est.setSearchMethod (tree);
   norm_est.setKSearch (30);
   
   norm_est.setInputCloud (src);
-  norm_est.compute (*points_with_normals_src);
-  pcl::copyPointCloud (*src, *points_with_normals_src);
+  norm_est.compute (*previous_cloud_xyznormals);
+  pcl::copyPointCloud (*src, *previous_cloud_xyznormals);
 
   norm_est.setInputCloud (tgt);
-  norm_est.compute (*points_with_normals_tgt);
-  pcl::copyPointCloud (*tgt, *points_with_normals_tgt);
+  norm_est.compute (*transformed_cloud_xyznormals);
+  pcl::copyPointCloud (*tgt, *transformed_cloud_xyznormals);
 
   //
   // Instantiate our custom point representation (defined above) ...
