@@ -41,7 +41,4 @@ ADD_COMPONENT(CloudTransformer)
 
 ADD_COMPONENT(MLSSmoothing)
 
-ADD_COMPONENT(PairwiseRegistration)
-
-ADD_COMPONENT(CloudStorage)
 
