@@ -75,27 +75,24 @@ protected:
 	// Input data streams
 	Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZ>::Ptr> in_cloud_xyz;
 	Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> in_cloud_xyzrgb;
-    Base::DataStreamIn<pcl::PointCloud<PointXYZSIFT>::Ptr> in_cloud_xyzsift;
-    Base::DataStreamIn<pcl::PointCloud<PointXYZSHOT>::Ptr> in_cloud_xyzshot;
-    Base::DataStreamIn<Types::HomogMatrix> in_hm;
-    Base::DataStreamIn<Eigen::Matrix4f> in_eigen;
+	Base::DataStreamIn<pcl::PointCloud<PointXYZSIFT>::Ptr> in_cloud_xyzsift;
+	Base::DataStreamIn<pcl::PointCloud<PointXYZSHOT>::Ptr> in_cloud_xyzshot;
+	Base::DataStreamIn<Types::HomogMatrix> in_hm;
+
 	// Output data streams
 	Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZ>::Ptr> out_cloud_xyz;
 	Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> out_cloud_xyzrgb;
-    Base::DataStreamOut<pcl::PointCloud<PointXYZSIFT>::Ptr> out_cloud_xyzsift;
-    Base::DataStreamOut<pcl::PointCloud<PointXYZSHOT>::Ptr> out_cloud_xyzshot;
+	Base::DataStreamOut<pcl::PointCloud<PointXYZSIFT>::Ptr> out_cloud_xyzsift;
+	Base::DataStreamOut<pcl::PointCloud<PointXYZSHOT>::Ptr> out_cloud_xyzshot;
 
-    // Handlers
-    void transform_clouds();
-    void transform_clouds_eigen();
+	// Handlers
+	void transform_clouds();
 
-	// Properties
-
-    //   Helper functions, specialized for every cloud type.
-    void transform_xyz(Types::HomogMatrix hm_);
-    void transform_xyzrgb(Types::HomogMatrix hm_);
-    void transform_xyzsift(Types::HomogMatrix hm_);
-    void transform_xyzshot(Types::HomogMatrix hm_);
+	//   Helper functions, specialized for every cloud type.
+	void transform_xyz(Types::HomogMatrix hm_);
+	void transform_xyzrgb(Types::HomogMatrix hm_);
+	void transform_xyzsift(Types::HomogMatrix hm_);
+	void transform_xyzshot(Types::HomogMatrix hm_);
 
 };
 
