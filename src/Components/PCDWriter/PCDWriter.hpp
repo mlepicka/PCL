@@ -67,32 +67,49 @@ protected:
 	 */
 	bool onStop();
 
-    /// Trigger - used for writing clouds
-    Base::DataStreamIn<Base::UnitType> in_trigger;
+	/// Trigger - used for writing clouds
+	Base::DataStreamIn<Base::UnitType, Base::DataStreamBuffer::Newest> in_save_trigger;
 
 	/// Cloud containing points with Cartesian coordinates (XYZ).
-    Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZ>::Ptr, Base::DataStreamBuffer::Newest> in_cloud_xyz;
+	Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZ>::Ptr, Base::DataStreamBuffer::Newest> in_cloud_xyz;
 
 	/// Cloud containing points with Cartesian coordinates and colour (XYZ + RGB).
-    Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZRGB>::Ptr, Base::DataStreamBuffer::Newest> in_cloud_xyzrgb;
+	Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZRGB>::Ptr, Base::DataStreamBuffer::Newest> in_cloud_xyzrgb;
 
 	/// Cloud containing points with Cartesian coordinates and SIFT descriptor (XYZ + 128).
-    Base::DataStreamIn<pcl::PointCloud<PointXYZSIFT>::Ptr, Base::DataStreamBuffer::Newest> in_cloud_xyzsift;
+	Base::DataStreamIn<pcl::PointCloud<PointXYZSIFT>::Ptr, Base::DataStreamBuffer::Newest> in_cloud_xyzsift;
 
-	// Handlers
-    Base::EventHandler2 h_Write_xyz;
-    Base::EventHandler2 h_Write_xyzrgb;
-    Base::EventHandler2 h_Write_xyzsift;
+
+	/// Flag indicating that the cloud should be saved to file.
+	bool save_cloud_flag;
+
+	// Properties
+	Base::Property<string> directory;
+	Base::Property<string> base_name;
+	Base::Property<bool> suffix;
+	Base::Property<bool> binary;
+
+	/// Saving mode: continous vs triggered.
+	Base::Property<bool> prop_auto_trigger;
+
+	// Help functions.
+	void Write_xyz();
+	void Write_xyzrgb();
+	void Write_xyzsift();
 	
-	Base::Property<std::string> filename;
-    Base::Property<bool> binary;
-    Base::Property<bool> suffix;
-	// Handlers
-    void Write_xyz();
-    void Write_xyzrgb();
-    void Write_xyzsift();
-    void onTriggeredLoadNextCloud();
+	// Prepares filename.
+	std::string prepareName(std::string suffix_);
 
+	// Handlers
+
+	/// Main handler, called every time when writer gets processor time.
+	void mainHandler();
+
+	/// Event handler function - save cloud.
+	void onSaveCloudButtonPressed();
+
+	/// Event handler function - save cloud, externally triggered version.
+	void onSaveCloudTriggered();
 
 };
 

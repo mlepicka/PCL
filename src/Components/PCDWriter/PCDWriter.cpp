@@ -22,14 +22,18 @@ namespace Processors {
 namespace PCDWriter {
 
 PCDWriter::PCDWriter(const std::string & name) :
-		Base::Component(name),
-        filename("filename", std::string("")),
-        binary("binary", false),
-        suffix("suffix", false)
+	Base::Component(name),
+	directory("directory", std::string(".")),
+	base_name("base_name", std::string("cloud")),
+	prop_auto_trigger("auto_trigger", false),
+	binary("binary", false),
+	suffix("suffix", true)
 {
-	registerProperty(filename);
+	registerProperty(directory);
+	registerProperty(base_name);
+	registerProperty(prop_auto_trigger);
 	registerProperty(binary);
-    registerProperty(suffix);
+	registerProperty(suffix);
 }
 
 PCDWriter::~PCDWriter() {
@@ -37,21 +41,27 @@ PCDWriter::~PCDWriter() {
 
 void PCDWriter::prepareInterface() {
 	// Register data streams.
-    registerStream("in_cloud_xyz", &in_cloud_xyz);
+	registerStream("in_cloud_xyz", &in_cloud_xyz);
 	registerStream("in_cloud_xyzrgb", &in_cloud_xyzrgb);
 	registerStream("in_cloud_xyzsift", &in_cloud_xyzsift);
-    registerStream("in_trigger", &in_trigger);
+	registerStream("in_save_trigger", &in_save_trigger);
 
-	// Register handlers - no dependencies.
-    registerHandler("Write_xyz", boost::bind(&PCDWriter::Write_xyz, this));
-    registerHandler("Write_xyzrgb", boost::bind(&PCDWriter::Write_xyzrgb, this));
-    registerHandler("Write_xyzsift", boost::bind(&PCDWriter::Write_xyzsift, this));
+	// Register handlers - save cloud, can be triggered manually (from GUI) or by new data present in trigger dataport.
+	// 1st version - manually.
+	registerHandler("onSaveCloudButtonPressed", boost::bind(&PCDWriter::onSaveCloudButtonPressed, this));
 
-    registerHandler("onTriggeredLoadNextCloud", boost::bind(&PCDWriter::onTriggeredLoadNextCloud, this));
-    addDependency("onTriggeredLoadNextCloud", &in_trigger);
+	// 2nd version - external trigger.
+	registerHandler("onSaveCloudTriggered", boost::bind(&PCDWriter::onSaveCloudTriggered, this));
+	addDependency("onSaveCloudTriggered", &in_save_trigger);
+
+	// Register "main"/"default" handler.
+	registerHandler("mainHandler", boost::bind(&PCDWriter::mainHandler, this));
+	addDependency("mainHandler", NULL);
 }
 
 bool PCDWriter::onInit() {
+	// Init flags.
+	save_cloud_flag = false;
 	return true;
 }
 
@@ -67,63 +77,90 @@ bool PCDWriter::onStart() {
 	return true;
 }
 
-void PCDWriter::onTriggeredLoadNextCloud(){
-    CLOG(LDEBUG) << "PCDWriter::onTriggeredLoadNextCloud";
-    in_trigger.read();
-    if(!in_cloud_xyz.empty())
-        Write_xyz();
-    if(!in_cloud_xyzrgb.empty())
-        Write_xyzrgb();
-    if(!in_cloud_xyzsift.empty())
-        Write_xyzsift();
+
+void PCDWriter::onSaveCloudButtonPressed() {
+	CLOG(LDEBUG) << "PCDWriter::onSaveCloudTriggered";
+	save_cloud_flag = true;
 }
 
-void PCDWriter::Write_xyz() {
-    CLOG(LTRACE) << "PCDWriter::Write_xyz";
-	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = in_cloud_xyz.read();
-    std::string fn = filename;
-    if(suffix){
-        size_t f = fn.find(".pcd");
-        if(f != std::string::npos){
-            fn.erase(f);
-        }
-        fn = std::string(fn) + std::string("_xyz.pcd");
-    }
 
-    pcl::io::savePCDFile (fn, *cloud, binary);
-	CLOG(LINFO) << "Saved " << cloud->points.size () << " XYZ points to "<< filename << std::endl;
+void PCDWriter::onSaveCloudTriggered() {
+	CLOG(LDEBUG) << "PCDWriter::onSaveCloudTriggered";
+	in_save_trigger.read();
+	save_cloud_flag = true;
+}
+
+
+void PCDWriter::mainHandler () {
+	CLOG(LTRACE) << "PCDWriter::mainHandler";
+	// Check working mode - if save flag not set or !auto_trigger - do nothing.
+	if (!prop_auto_trigger && !save_cloud_flag)
+		return;
+	save_cloud_flag = false;
+
+	// Try to save the retrieved clouds.
+	if(!in_cloud_xyz.empty())
+		Write_xyz();
+	if(!in_cloud_xyzrgb.empty())
+		Write_xyzrgb();
+	if(!in_cloud_xyzsift.empty())
+		Write_xyzsift();
+}
+
+
+
+std::string PCDWriter::prepareName(std::string suffix_) {
+	CLOG(LTRACE) << "PCDWriter::prepareName";
+	// Get current time.	
+	boost::posix_time::ptime tm = boost::posix_time::microsec_clock::local_time();
+	// Generate name
+	std::string fn = std::string(directory) + "/" + boost::posix_time::to_iso_extended_string(tm) + "_" + std::string(base_name);
+
+	// Overwrite suffix.
+	if(suffix){
+		size_t f = fn.find(".pcd");
+		// If found - remove all subsequent characters.
+		if(f != std::string::npos){
+			fn.erase(f);
+		}//: if
+		// Add suffix.
+		fn = std::string(fn) + std::string(suffix_);
+	}//: if
+	CLOG(LDEBUG) << "Generated name: " << fn;
+	return fn;
+}
+
+
+void PCDWriter::Write_xyz() {
+	CLOG(LTRACE) << "PCDWriter::Write_xyz";
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = in_cloud_xyz.read();
+
+	std::string fn = prepareName("_xyz.pcd");
+	pcl::io::savePCDFile (fn, *cloud, binary);
+
+	CLOG(LINFO) << "Saved " << cloud->points.size () << " XYZ points to "<< fn << std::endl;
 }
 
 
 void PCDWriter::Write_xyzrgb() {
 	CLOG(LTRACE) << "PCDWriter::Write_xyzrgb";
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = in_cloud_xyzrgb.read();
-    std::string fn = filename;
-    if(suffix){
-        size_t f = fn.find(".pcd");
-        if(f != std::string::npos){
-            fn.erase(f);
-        }
-        fn = std::string(fn) + std::string("_xyzrgb.pcd");
-    }
-    pcl::io::savePCDFile (fn, *cloud, binary);
-	CLOG(LINFO) << "Saved " << cloud->points.size () << " XYZRGB points to "<< filename << std::endl;
+
+	std::string fn = prepareName("_xyzrgb.pcd");
+	pcl::io::savePCDFile (fn, *cloud, binary);
+
+	CLOG(LINFO) << "Saved " << cloud->points.size () << " XYZRGB points to "<< fn << std::endl;
 }
 
 
 void PCDWriter::Write_xyzsift() {
 	CLOG(LTRACE) << "PCDWriter::Write_xyzsift";
 	pcl::PointCloud<PointXYZSIFT>::Ptr cloud = in_cloud_xyzsift.read();
-    std::string fn = filename;
-    if(suffix){
-        size_t f = fn.find(".pcd");
-        if(f != std::string::npos){
-            fn.erase(f);
-        }
-        fn = std::string(fn) + std::string("_xyzsift.pcd");
-    }
-    pcl::io::savePCDFile (fn, *cloud, binary);
-    CLOG(LINFO) << "Saved " << cloud->points.size () << " XYZSIFT points to "<< filename << std::endl;
+
+	std::string fn = prepareName("_xyzsift.pcd");
+	pcl::io::savePCDFile (fn, *cloud, binary);
+
+	CLOG(LINFO) << "Saved " << cloud->points.size () << " XYZSIFT points to "<< fn << std::endl;
 }
 
 
