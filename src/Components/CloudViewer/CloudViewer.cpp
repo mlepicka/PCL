@@ -19,7 +19,7 @@ namespace CloudViewer {
 
 CloudViewer::CloudViewer(const std::string & name) :
 	Base::Component(name),
-	prop_window_name("window_name",std::string("3D PC Viewer")),
+	prop_title("title",std::string("3D PC Viewer")),
 	prop_coordinate_system("coordinate_system",boost::bind(&CloudViewer::onCSShowClick, this, _2), true),
 	prop_background_color("background_color", boost::bind(&CloudViewer::onBackgroundColorChange, this, _2), std::string("0,0,0")),
 	normals_scale("normals.scale", 0.1),
@@ -28,7 +28,7 @@ CloudViewer::CloudViewer(const std::string & name) :
 	prop_sift_color("sift.color", boost::bind(&CloudViewer::onSIFTColorChange, this, _2), std::string("255,0,0"))
 
 {
-	registerProperty(prop_window_name);
+	registerProperty(prop_title);
 	registerProperty(prop_coordinate_system);
 	registerProperty(prop_background_color);
 
@@ -163,7 +163,7 @@ void CloudViewer::prepareInterface() {
 bool CloudViewer::onInit() {
 
 	CLOG(LTRACE) << "CloudViewer::onInit\n";
-	viewer = new pcl::visualization::PCLVisualizer(prop_window_name);
+	viewer = new pcl::visualization::PCLVisualizer(prop_title);
 	//viewer->createViewPort (0.0, 0.0, 0.5, 1.0, v1);
 
 	// Try to change background color.

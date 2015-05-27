@@ -18,7 +18,9 @@
 		<Subtask name="Processing">
 			<Executor name="Exec1"  period="0.1">
 				<Component name="Source" type="PCL:PCDReader" priority="1" bump="2">
-					<param name="filename">/home/tkornuta/Objects/cereal_box_1_co5_xyzrgb.pcd</param>					
+<!--					<param name="filename">/home/tkornuta/Objects/cereal_box_1_co5_xyzrgb.pcd</param><!---->
+<!--					<param name="filename">/home/tkornuta/discode_ecovi/DCL/Registration/data/2015-05-21/cukier_models/2015-05-27T20:04:04.123836_cukier_pairwise_no_icp_xyzrgb.pcd</param><!---->
+					<param name="filename">/home/tkornuta/discode_ecovi/DCL/Registration/data/2015-05-21/cukier_models/2015-05-27T20:04:15.021918_cukier_pairwise_no_icp_xyzrgb.pcd</param><!---->
 				</Component>
 			</Executor>
 		</Subtask>
@@ -27,9 +29,6 @@
 			<Executor name="Exec2" period="0.01">
 				<Component name="Window" type="PCL:CloudViewer" priority="1" bump="0">
 <!--                                    <param name="coordinate_system">false</param>-->
-                                    <param name="background_r">255</param>
-                                    <param name="background_g">255</param>
-                                    <param name="background_b">255</param>
 				</Component>
 			</Executor>
 		</Subtask>

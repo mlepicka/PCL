@@ -68,7 +68,7 @@ protected:
 	bool onStop();
 
 	/// Trigger - used for writing clouds
-	Base::DataStreamIn<Base::UnitType, Base::DataStreamBuffer::Newest> in_save_trigger;
+	Base::DataStreamIn<Base::UnitType, Base::DataStreamBuffer::Newest> in_save_cloud_trigger;
 
 	/// Cloud containing points with Cartesian coordinates (XYZ).
 	Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZ>::Ptr, Base::DataStreamBuffer::Newest> in_cloud_xyz;

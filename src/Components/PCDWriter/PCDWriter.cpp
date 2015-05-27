@@ -44,7 +44,7 @@ void PCDWriter::prepareInterface() {
 	registerStream("in_cloud_xyz", &in_cloud_xyz);
 	registerStream("in_cloud_xyzrgb", &in_cloud_xyzrgb);
 	registerStream("in_cloud_xyzsift", &in_cloud_xyzsift);
-	registerStream("in_save_trigger", &in_save_trigger);
+	registerStream("in_save_cloud_trigger", &in_save_cloud_trigger);
 
 	// Register handlers - save cloud, can be triggered manually (from GUI) or by new data present in trigger dataport.
 	// 1st version - manually.
@@ -52,7 +52,7 @@ void PCDWriter::prepareInterface() {
 
 	// 2nd version - external trigger.
 	registerHandler("onSaveCloudTriggered", boost::bind(&PCDWriter::onSaveCloudTriggered, this));
-	addDependency("onSaveCloudTriggered", &in_save_trigger);
+	addDependency("onSaveCloudTriggered", &in_save_cloud_trigger);
 
 	// Register "main"/"default" handler.
 	registerHandler("mainHandler", boost::bind(&PCDWriter::mainHandler, this));
@@ -86,7 +86,7 @@ void PCDWriter::onSaveCloudButtonPressed() {
 
 void PCDWriter::onSaveCloudTriggered() {
 	CLOG(LDEBUG) << "PCDWriter::onSaveCloudTriggered";
-	in_save_trigger.read();
+	in_save_cloud_trigger.read();
 	save_cloud_flag = true;
 }
 

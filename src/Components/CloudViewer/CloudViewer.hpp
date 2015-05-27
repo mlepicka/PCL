@@ -89,16 +89,16 @@ protected:
 	// Handlers
 	void on_cloud_xyz();
 	void on_cloud_xyzrgb();
-    void on_cloud_xyzsift();
+	void on_cloud_xyzsift();
 	void on_cloud_normals();
 	void on_cloud_xyzrgb_normals();
 	void on_spin();
 
-	/// Property: name of the window.
-    Base::Property<std::string> prop_window_name;
+	/// Property: title of the window.
+	Base::Property<std::string> prop_title;
 
 	/// Property: display/hide coordinate system.
-    Base::Property<bool> prop_coordinate_system;
+	Base::Property<bool> prop_coordinate_system;
 
 	/// Property: background color. As default it is set to 1 row with 0, 0, 0 (black).
 	Base::Property<std::string> prop_background_color;
@@ -107,12 +107,12 @@ protected:
 	Base::Property<std::string> prop_sift_color;
 
 	/// Property: size of sift points. As default it is set to 1.
-    Base::Property<float> prop_sift_size;
+	Base::Property<float> prop_sift_size;
 
-    Base::Property<float> normals_scale;
-    Base::Property<int> normals_level;
+	Base::Property<float> normals_scale;
+	Base::Property<int> normals_level;
 
-    pcl::visualization::PCLVisualizer * viewer;
+	pcl::visualization::PCLVisualizer * viewer;
 	int v1;
 
 	/// Handler for showing/hiding coordinate system.
