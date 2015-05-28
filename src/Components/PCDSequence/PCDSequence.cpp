@@ -1,6 +1,6 @@
 /*!
- * \file
- * \brief
+ * \file PCDSequence.cpp
+ * \brief Class responsible for retrieving point clouds from PCD sequences - methods definition.
  * \author Tomek Kornuta, tkornuta@gmail.com
  */
 
@@ -23,8 +23,8 @@ PCDSequence::PCDSequence(const std::string & n) :
 	prop_loop("mode.loop", false),
 	prop_auto_publish_cloud("mode.auto_publish_cloud", true),
 	prop_auto_next_cloud("mode.auto_next_cloud", true),
-	prop_auto_prev_cloud("mode.auto_prev_cloud", false),
-	prop_read_on_init("read_on_init", true) 
+	prop_auto_prev_cloud("mode.auto_prev_cloud", false)
+//	prop_read_on_init("read_on_init", true) 
 {
 	registerProperty(prop_directory);
 	registerProperty(prop_pattern);
@@ -33,13 +33,13 @@ PCDSequence::PCDSequence(const std::string & n) :
 	registerProperty(prop_auto_publish_cloud);
 	registerProperty(prop_auto_next_cloud);
 	registerProperty(prop_auto_prev_cloud);
-	registerProperty(prop_read_on_init);
+//	registerProperty(prop_read_on_init);
 
-	CLOG(LTRACE) << "PCDSequence::Constructed";
+	CLOG(LTRACE) << "Constructed";
 }
 
 PCDSequence::~PCDSequence() {
-	CLOG(LTRACE) << "PCDSequence::Destroyed";
+	CLOG(LTRACE) << "Destroyed";
 }
 
 
@@ -85,21 +85,16 @@ void PCDSequence::prepareInterface() {
 }
 
 bool PCDSequence::onInit() {
-	CLOG(LTRACE) << "PCDSequence::initialize\n";
+	CLOG(LTRACE) << "initialize\n";
 
 	// Set indices.
 	index = 0;
 	previous_index = -1;
 
-	// Initialize flags
+	// Initialize flags.
 	next_cloud_flag = false;
 	prev_cloud_flag = false;
-	reload_sequence_flag = false;
-	// Load files on init.
 	reload_sequence_flag = true;
-
-/*	if (prop_read_on_init)
-		// TODO!*/
 
 	previous_type = NONE;
 
@@ -112,19 +107,18 @@ bool PCDSequence::onInit() {
 }
 
 bool PCDSequence::onFinish() {
-	CLOG(LTRACE) << "PCDSequence::finish\n";
-
+	CLOG(LTRACE) << "onFinish";
 	return true;
 }
 
 void PCDSequence::onPublishCloud() {
-    CLOG(LTRACE) << "PCDSequence::onPublishCloud";
+    CLOG(LTRACE) << "onPublishCloud";
 
     publish_cloud_flag = true;
 }
 
 void PCDSequence::onTriggeredPublishCloud() {
-    CLOG(LTRACE) << "PCDSequence::onTriggeredPublishCloud";
+    CLOG(LTRACE) << "onTriggeredPublishCloud";
 
     in_publish_cloud_trigger.read();
 
@@ -132,9 +126,9 @@ void PCDSequence::onTriggeredPublishCloud() {
 }
 
 void PCDSequence::onLoadCloud() {
-	CLOG(LTRACE) << "PCDSequence::onLoadCloud";
+	CLOG(LTRACE) << "onLoadCloud";
 
-	CLOG(LDEBUG) << " index=" << index << " previous_index=" << previous_index << " previous_type=" << previous_type;
+	CLOG(LDEBUG) << "Before index=" << index << " previous_index=" << previous_index << " previous_type=" << previous_type;
 
 	
 	if(reload_sequence_flag) {
@@ -169,8 +163,10 @@ void PCDSequence::onLoadCloud() {
 				index = files.size() -1;
 				CLOG(LDEBUG) << "Sequence loop";
 			} else {
+				// Sequence ended - truncate index, but do not return image.
 				index = 0;
-				CLOG(LDEBUG) << "End of sequence";
+				CLOG(LINFO) << "End of sequence";
+				return;
 			}//: else
 		}//: if
 
@@ -181,8 +177,10 @@ void PCDSequence::onLoadCloud() {
 				index = 0;
 				CLOG(LINFO) << "loop";
 			} else {
+				// Sequence ended - truncate index, but do not return image.
 				index = files.size() -1;
-				CLOG(LINFO) << "end of sequence";
+				CLOG(LINFO) << "End of sequence";
+				return;
 			}//: else
 		}//: if
 	}//: else
@@ -197,6 +195,8 @@ void PCDSequence::onLoadCloud() {
 	if(!prop_auto_publish_cloud && !publish_cloud_flag)
 		return;
 	publish_cloud_flag = false;
+
+	CLOG(LDEBUG) << "After: index=" << index << " previous_index=" << previous_index << " previous_type=" << previous_type;
 
 	try {
 		if ((previous_type != NONE) && (index == previous_index)) {
@@ -247,33 +247,33 @@ void PCDSequence::onLoadCloud() {
 
 
 void PCDSequence::onTriggeredLoadNextCloud(){
-    CLOG(LDEBUG) << "PCDSequence::onTriggeredLoadNextCloud - next cloud from the sequence will be loaded";
-    in_next_cloud_trigger.read();
+	CLOG(LDEBUG) << "onTriggeredLoadNextCloud - next cloud from the sequence will be loaded";
+	in_next_cloud_trigger.read();
 	next_cloud_flag = true;
 }
 
 
 void PCDSequence::onLoadNextCloud(){
-	CLOG(LDEBUG) << "PCDSequence::onLoadNextCloud - next cloud from the PCDSequence will be loaded";
+	CLOG(LDEBUG) << "onLoadNextCloud - next cloud from the sequence will be loaded";
 	next_cloud_flag = true;
 }
 
 
 void PCDSequence::onTriggeredLoadPrevCloud(){
-    CLOG(LDEBUG) << "PCDSequence::onTriggeredLoadPrevCloud - prev cloud from the sequence will be loaded";
-    in_prev_cloud_trigger.read();
+	CLOG(LDEBUG) << "onTriggeredLoadPrevCloud - prev cloud from the sequence will be loaded";
+	in_prev_cloud_trigger.read();
 	prev_cloud_flag = true;
 }
 
 
 void PCDSequence::onLoadPrevCloud(){
-	CLOG(LDEBUG) << "PCDSequence::onLoadPrevCloud - prev cloud from the PCDSequence will be loaded";
+	CLOG(LDEBUG) << "onLoadPrevCloud - prev cloud from the sequence will be loaded";
 	prev_cloud_flag = true;
 }
 
 
 void PCDSequence::onSequenceReload() {
-	CLOG(LDEBUG) << "PCDSequence::onSequenceReload";
+	CLOG(LDEBUG) << "onSequenceReload";
 	reload_sequence_flag = true;
 }
 

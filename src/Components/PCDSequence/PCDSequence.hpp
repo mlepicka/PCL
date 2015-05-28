@@ -194,10 +194,10 @@ private:
 	/// Publishing mode: auto vs triggered.
 	Base::Property<bool> prop_auto_publish_cloud;
 
-	/// Next Cloud loading mode: next vs triggered
+	/// Next cloud loading mode: next vs triggered
 	Base::Property<bool> prop_auto_next_cloud;
 
-	/// Next Cloud loading mode: previous vs triggered
+	/// Prev cloud loading mode: previous vs triggered
 	Base::Property<bool> prop_auto_prev_cloud;
 
 	/// Loading mode: Clouds loaded in the loop.
@@ -206,8 +206,8 @@ private:
 	/// Sort cloud sequence by their names.
 	Base::Property<bool> prop_sort;
 
-	/// Returns cloud right after start.
-	Base::Property<bool> prop_read_on_init;	
+	/// TODO: loads whole sequence at start.
+//	Base::Property<bool> prop_read_on_init;
 
 };
 
