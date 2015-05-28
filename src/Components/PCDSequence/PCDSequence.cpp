@@ -23,6 +23,7 @@ PCDSequence::PCDSequence(const std::string & n) :
 	prop_loop("mode.loop", false),
 	prop_auto_publish_cloud("mode.auto_publish_cloud", true),
 	prop_auto_next_cloud("mode.auto_next_cloud", true),
+	prop_auto_prev_cloud("mode.auto_prev_cloud", false),
 	prop_read_on_init("read_on_init", true) 
 {
 	registerProperty(prop_directory);
@@ -31,17 +32,8 @@ PCDSequence::PCDSequence(const std::string & n) :
 	registerProperty(prop_loop);
 	registerProperty(prop_auto_publish_cloud);
 	registerProperty(prop_auto_next_cloud);
+	registerProperty(prop_auto_prev_cloud);
 	registerProperty(prop_read_on_init);
-
-	// Set index number.
-	if (prop_auto_next_cloud)
-		index = -1;
-	else
-		index = 0;
-
-	// Initialize flags
-	next_cloud_flag = false;
-	reload_flag = false;
 
 	CLOG(LTRACE) << "PCDSequence::Constructed";
 }
@@ -74,10 +66,18 @@ void PCDSequence::prepareInterface() {
 	registerHandler("onTriggeredLoadNextCloud", boost::bind(&PCDSequence::onTriggeredLoadNextCloud, this));
 	addDependency("onTriggeredLoadNextCloud", &in_next_cloud_trigger);
 
-	// Register handlers - reloads PCDSequence, triggered manually.
-	registerHandler("Reload PCDSequence", boost::bind(&PCDSequence::onSequenceReload, this));
+	// Register handlers - prev cloud, can be triggered manually (from GUI) or by new data present in_load_next_cloud_trigger dataport.
+	// 1st version - manually.
+	registerHandler("Previous cloud", boost::bind(&PCDSequence::onLoadPrevCloud, this));
 
-	registerHandler("Publish Cloud", boost::bind(&PCDSequence::onPublishCloud, this));
+	// 2nd version - external trigger.
+	registerHandler("onTriggeredLoadPrevCloud", boost::bind(&PCDSequence::onTriggeredLoadPrevCloud, this));
+	addDependency("onTriggeredLoadPrevCloud", &in_prev_cloud_trigger);
+
+	// Register other handlers - reloads PCDSequence, triggered manually.
+	registerHandler("Reload seguence", boost::bind(&PCDSequence::onSequenceReload, this));
+
+	registerHandler("Publish cloud", boost::bind(&PCDSequence::onPublishCloud, this));
 
 	registerHandler("onTriggeredPublishCloud", boost::bind(&PCDSequence::onTriggeredPublishCloud, this));
 	addDependency("onTriggeredPublishCloud", &in_publish_cloud_trigger);
@@ -87,10 +87,21 @@ void PCDSequence::prepareInterface() {
 bool PCDSequence::onInit() {
 	CLOG(LTRACE) << "PCDSequence::initialize\n";
 
+	// Set indices.
+	index = 0;
+	previous_index = -1;
+
+	// Initialize flags
+	next_cloud_flag = false;
+	prev_cloud_flag = false;
+	reload_sequence_flag = false;
 	// Load files on init.
-	reload_flag = true;
-	if (prop_read_on_init)
-		next_cloud_flag = true;
+	reload_sequence_flag = true;
+
+/*	if (prop_read_on_init)
+		// TODO!*/
+
+	previous_type = NONE;
 
 	// Initialize pointers to empty clouds.
 	cloud_xyz = pcl::PointCloud<pcl::PointXYZ>::Ptr (new pcl::PointCloud<pcl::PointXYZ>);
@@ -121,108 +132,115 @@ void PCDSequence::onTriggeredPublishCloud() {
 }
 
 void PCDSequence::onLoadCloud() {
-	CLOG(LDEBUG) << "PCDSequence::onLoadCloud";
-//	bool index_changed = false;
+	CLOG(LTRACE) << "PCDSequence::onLoadCloud";
 
-	if(reload_flag) {
+	CLOG(LDEBUG) << " index=" << index << " previous_index=" << previous_index << " previous_type=" << previous_type;
+
+	
+	if(reload_sequence_flag) {
 		// Try to reload PCDSequence.
 		if (!findFiles()) {
 			CLOG(LERROR) << "There are no files matching the regular expression "
 					<< prop_pattern << " in " << prop_directory;
 		}
-		index = -1;
-		reload_flag = false;
-	}
+		index = 0;
+		reload_sequence_flag = false;
+	} else if (previous_index == -1) {
+		// Special case - start!
+			index = 0;
+	} else {
+		// Check triggering mode.
+		if ((prop_auto_next_cloud) || (next_cloud_flag)) {
+			index++;
+		}//: if
 
+		if ((prop_auto_prev_cloud) || (prev_cloud_flag)) {
+			index--;
+		}//: if
+
+		// Anyway, reset flags.
+		next_cloud_flag = false;
+		prev_cloud_flag = false;
+
+		// Check index range - first cloud.
+		if (index <0){
+			out_end_of_sequence_trigger.write(Base::UnitType());
+			if (prop_loop) {
+				index = files.size() -1;
+				CLOG(LDEBUG) << "Sequence loop";
+			} else {
+				index = 0;
+				CLOG(LDEBUG) << "End of sequence";
+			}//: else
+		}//: if
+
+		// Check index range - last cloud.
+		if (index >= files.size()) {
+			out_end_of_sequence_trigger.write(Base::UnitType());
+			if (prop_loop) {
+				index = 0;
+				CLOG(LINFO) << "loop";
+			} else {
+				index = files.size() -1;
+				CLOG(LINFO) << "end of sequence";
+			}//: else
+		}//: if
+	}//: else
 
 	// Check whether there are any clouds loaded.
-	if(files.empty())
+	if(files.empty()){
+		CLOG(LNOTICE) << "Empty sequence!";
 		return;
+	}//: else
 
-	// Check Publishing
+	// Check publishing flags.
 	if(!prop_auto_publish_cloud && !publish_cloud_flag)
 		return;
-
 	publish_cloud_flag = false;
 
-	// Check triggering mode.
-	if ((prop_auto_next_cloud) || (!prop_auto_next_cloud && next_cloud_flag)) {
-		index++;
-//		index_changed = true;
-	}//: if
-	
-	// Anyway, reset flag.
-	next_cloud_flag = false;
-
-	// Check index.
-	if (index <0)
-		index = 0;
-	// Check the size of the dataset.
-	if (index >= files.size()) {
-		out_end_of_sequence_trigger.write(Base::UnitType());
-		if (prop_loop) {
-			index = 0;
-			CLOG(LINFO) << "loop";
-		} else {
-			index = files.size() -1;
-			CLOG(LINFO) << "end of sequence";
-			return;
-		}
-
-	}
-
-	CLOG(LINFO) << "PCDSequence: reading cloud " << files[index];
 	try {
-/*		// Get file extension.
-		std::string ext = files[index].substr(files[index].rfind(".")+1);
-		CLOG(LDEBUG) << "Extracted file Extension " << ext;
-		// Read depth from yaml.
-		if ((ext == "yaml") || (ext == "yml")){
-			cv::FileStorage file(files[index], cv::FileStorage::READ);
-			file["img"] >> img;
-		}
-		else
-			img = cv::imread(files[index], CV_LOAD_cloud_ANYDEPTH | CV_LOAD_cloud_ANYCOLOR);
+		if ((previous_type != NONE) && (index == previous_index)) {
+			CLOG(LDEBUG) << "Returning previous cloud";
+			// There is no need to load the cloud - return stored one.
+			if (previous_type == XYZ)
+				out_cloud_xyz.write(cloud_xyz);
+			else if (previous_type == XYZRGB)
+				out_cloud_xyzrgb.write(cloud_xyzrgb);
+			else if (previous_type == XYZSIFT)
+				out_cloud_xyzsift.write(cloud_xyzsift);
+			return;
+		}//: if
 
-		// Write cloud to the output port.
-		out_img.write(img);*/
-
-
-		// Try to read the cloud of XYZ points.
-//		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_xyz (new pcl::PointCloud<pcl::PointXYZ>);
-		if (pcl::io::loadPCDFile<pcl::PointXYZ> (files[index], *cloud_xyz) == -1){
-			CLOG(LWARNING) <<"Cannot read PointXYZ cloud from "<<files[index];
-		}else{
-			out_cloud_xyz.write(cloud_xyz);
-			CLOG(LINFO) <<"PointXYZ cloud loaded properly from "<<files[index];
-			//return;
-		}// else
-
-		// Try to read the cloud of XYZRGB points.
-//		pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_xyzrgb (new pcl::PointCloud<pcl::PointXYZRGB>);
-		if (pcl::io::loadPCDFile<pcl::PointXYZRGB> (files[index], *cloud_xyzrgb) == -1){
-			CLOG(LWARNING) <<"Cannot read PointXYZRGB cloud from "<<files[index];
-		}else{
-			out_cloud_xyzrgb.write(cloud_xyzrgb);
-			CLOG(LINFO) <<"PointXYZRGB cloud loaded properly from "<<files[index];
-			//return;
-		}// else
-
-		// Try to read the cloud of XYZSIFT points.
-//		pcl::PointCloud<PointXYZSIFT>::Ptr cloud_xyzsift (new pcl::PointCloud<PointXYZSIFT>);
+		CLOG(LDEBUG) << "Loading cloud from file";
 		if (pcl::io::loadPCDFile<PointXYZSIFT> (files[index], *cloud_xyzsift) == -1){
-			CLOG(LWARNING) <<"Cannot read PointXYZSIFT cloud from "<<files[index];
-		}else{
+			// Clear the XYZRGB cloud.
+			//cloud_xyzrgb.clear();
+			// Try to read the cloud of XYZSIFT points.
 			out_cloud_xyzsift.write(cloud_xyzsift);
 			CLOG(LINFO) <<"PointXYZSIFT cloud loaded properly from "<<files[index];
-		//return;
-		}// else
-
-
-
+			previous_type = XYZSIFT;
+			previous_index = index;
+		} else if (pcl::io::loadPCDFile<pcl::PointXYZRGB> (files[index], *cloud_xyzrgb) != -1){
+			// Clear the XYZ cloud.
+			//cloud_xyz.clear();
+			// Try to read the cloud of XYZRGB points.
+			out_cloud_xyzrgb.write(cloud_xyzrgb);
+			CLOG(LINFO) <<"PointXYZRGB cloud loaded properly from "<<files[index];
+			previous_type = XYZRGB;
+			previous_index = index;
+		} else if (pcl::io::loadPCDFile<pcl::PointXYZ> (files[index], *cloud_xyz) != -1){
+			// Try to read the cloud of XYZ points.
+			out_cloud_xyz.write(cloud_xyz);
+			CLOG(LINFO) <<"PointXYZ cloud loaded properly from "<<files[index];
+			previous_type = XYZ;
+			previous_index = index;
+		} else {
+			//cloud_xyzsift.clear();
+			CLOG(LWARNING) << "Could not read cloud of any type from the file";
+		}//: if
 
 	} catch (...) {
-		CLOG(LWARNING) << ": cloud reading failed! [" << files[index] << "]";
+		CLOG(LWARNING) << "Cloud reading failed! [" << files[index] << "]";
 	}
 
 }
@@ -241,9 +259,22 @@ void PCDSequence::onLoadNextCloud(){
 }
 
 
+void PCDSequence::onTriggeredLoadPrevCloud(){
+    CLOG(LDEBUG) << "PCDSequence::onTriggeredLoadPrevCloud - prev cloud from the sequence will be loaded";
+    in_prev_cloud_trigger.read();
+	prev_cloud_flag = true;
+}
+
+
+void PCDSequence::onLoadPrevCloud(){
+	CLOG(LDEBUG) << "PCDSequence::onLoadPrevCloud - prev cloud from the PCDSequence will be loaded";
+	prev_cloud_flag = true;
+}
+
+
 void PCDSequence::onSequenceReload() {
 	CLOG(LDEBUG) << "PCDSequence::onSequenceReload";
-	reload_flag = true;
+	reload_sequence_flag = true;
 }
 
 
