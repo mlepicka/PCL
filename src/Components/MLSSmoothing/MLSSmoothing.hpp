@@ -1,11 +1,11 @@
 /*!
  * \file
  * \brief 
- * \author Micha Laszkowski
+ * \author tkornuta
  */
 
-#ifndef STATISTICALOUTLIERREMOVAL_HPP_
-#define STATISTICALOUTLIERREMOVAL_HPP_
+#ifndef MLSSmoothing_HPP_
+#define MLSSmoothing_HPP_
 
 #include "Component_Aux.hpp"
 #include "Component.hpp"
@@ -17,25 +17,25 @@
 #include <pcl/point_cloud.h>
 
 namespace Processors {
-namespace StatisticalOutlierRemoval {
+namespace MLSSmoothing {
 
 /*!
- * \class StatisticalOutlierRemoval
- * \brief StatisticalOutlierRemoval processor class.
+ * \class MLSSmoothing
+ * \brief MLSSmoothing processor class.
  *
- * StatisticalOutlierRemoval processor.
+ * MLSSmoothing processor.
  */
-class StatisticalOutlierRemoval: public Base::Component {
+class MLSSmoothing: public Base::Component {
 public:
 	/*!
 	 * Constructor.
 	 */
-	StatisticalOutlierRemoval(const std::string & name = "StatisticalOutlierRemoval");
+	MLSSmoothing(const std::string & name = "MLSSmoothing");
 
 	/*!
 	 * Destructor
 	 */
-	virtual ~StatisticalOutlierRemoval();
+	virtual ~MLSSmoothing();
 
 	/*!
 	 * Prepare components interface (register streams and handlers).
@@ -73,14 +73,12 @@ protected:
 	Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZ>::Ptr> in_cloud_xyz;
 
 	// Output data streams
-
 	Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> out_cloud_xyzrgb;
 	Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZ>::Ptr> out_cloud_xyz;
 
 	Base::Property<bool> negative;
 	Base::Property<float> StddevMulThresh;
 	Base::Property<float> MeanK;
-
 	Base::Property<bool> pass_through;
 	
 	// Handlers
@@ -89,12 +87,12 @@ protected:
 
 };
 
-} //: namespace StatisticalOutlierRemoval
+} //: namespace MLSSmoothing
 } //: namespace Processors
 
 /*
  * Register processor component.
  */
-REGISTER_COMPONENT("StatisticalOutlierRemoval", Processors::StatisticalOutlierRemoval::StatisticalOutlierRemoval)
+REGISTER_COMPONENT("MLSSmoothing", Processors::MLSSmoothing::MLSSmoothing)
 
-#endif /* STATISTICALOUTLIERREMOVAL_HPP_ */
+#endif /* MLSSmoothing_HPP_ */

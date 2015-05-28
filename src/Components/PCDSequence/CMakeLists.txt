@@ -5,9 +5,9 @@ SET(CMAKE_INCLUDE_CURRENT_DIR ON)
 FILE(GLOB files *.cpp)
 
 # Create an executable file from sources:
-ADD_LIBRARY(RANSACPlane SHARED ${files})
+ADD_LIBRARY(PCDSequence SHARED ${files})
 
 # Link external libraries
-TARGET_LINK_LIBRARIES(RANSACPlane ${DisCODe_LIBRARIES})
+TARGET_LINK_LIBRARIES(PCDSequence ${DisCODe_LIBRARIES} )
 
-INSTALL_COMPONENT(RANSACPlane)
+INSTALL_COMPONENT(PCDSequence)

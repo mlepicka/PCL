@@ -6,12 +6,11 @@ FILE(GLOB files *.cpp)
 
 # Find required packages
 FIND_PACKAGE( OpenCV REQUIRED )
-FIND_PACKAGE( PCL 1.7.0 REQUIRED )
 
 # Create an executable file from sources:
 ADD_LIBRARY(MultiXYZCloudsViewer SHARED ${files})
 
 # Link external libraries
-TARGET_LINK_LIBRARIES(MultiXYZCloudsViewer ${OpenCV_LIBS} ${DisCODe_LIBRARIES} ${PCL_LIBRARIES})
+TARGET_LINK_LIBRARIES(MultiXYZCloudsViewer ${DisCODe_LIBRARIES} ${OpenCV_LIBS})
 
 INSTALL_COMPONENT(MultiXYZCloudsViewer)

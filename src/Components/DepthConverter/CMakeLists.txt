@@ -4,15 +4,13 @@ SET(CMAKE_INCLUDE_CURRENT_DIR ON)
 # Create a variable containing all .cpp files:
 FILE(GLOB files *.cpp)
 
+# Find opencv package
+FIND_PACKAGE( OpenCV REQUIRED )
+
 # Create an executable file from sources:
 ADD_LIBRARY(DepthConverter SHARED ${files})
 
-FIND_PACKAGE( OpenCV REQUIRED )
-
 # Link external libraries
-TARGET_LINK_LIBRARIES(DepthConverter ${OpenCV_LIBS} ${DisCODe_LIBRARIES} ${PCL_LIBRARIES})
-
-# Add aother libraries if necessary, for example:
-# TARGET_LINK_LIBRARIES(Example ${DisCODe_LIBRARIES} ${OpenCV_LIBS} )
+TARGET_LINK_LIBRARIES(DepthConverter ${DisCODe_LIBRARIES} ${OpenCV_LIBS})
 
 INSTALL_COMPONENT(DepthConverter)

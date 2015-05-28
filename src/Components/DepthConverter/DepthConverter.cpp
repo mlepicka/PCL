@@ -29,63 +29,53 @@ DepthConverter::~DepthConverter() {
 }
 
 void DepthConverter::prepareInterface() {
-	// Register data streams, events and event handlers HERE!
 	// Register data streams
 	registerStream("in_depth", &in_depth);
+	registerStream("in_depth_xyz", &in_depth_xyz);
 	registerStream("in_color", &in_color);
 	registerStream("in_mask", &in_mask);
 	registerStream("in_camera_info", &in_camera_info);
 	registerStream("out_cloud_xyz", &out_cloud_xyz);
 	registerStream("out_cloud_xyzrgb", &out_cloud_xyzrgb);
-    registerStream("in_depth_xyz", &in_depth_xyz);
-    registerStream("in_rgb_stereo", &in_rgb_stereo);
 
-	// Register handlers
-	h_process_depth_mask.setup(boost::bind(&DepthConverter::process_depth_mask, this));
-	registerHandler("process_depth_mask", &h_process_depth_mask);
-	addDependency("process_depth_mask", &in_depth);
-	addDependency("process_depth_mask", &in_camera_info);	
-	addDependency("process_depth_mask", &in_mask);
-	
-	h_process_depth.setup(boost::bind(&DepthConverter::process_depth, this));
-	registerHandler("process_depth", &h_process_depth);
+	// Register handlers - depth dependent functions (CAMERA INFO required).
+	registerHandler("process_depth", boost::bind(&DepthConverter::process_depth, this));
 	addDependency("process_depth", &in_depth);
 	addDependency("process_depth", &in_camera_info);
 
-	h_process_depth_mask_color.setup(boost::bind(&DepthConverter::process_depth_mask_color, this));
-	registerHandler("process_depth_mask_color", &h_process_depth_mask_color);
+	registerHandler("process_depth_mask", boost::bind(&DepthConverter::process_depth_mask, this));
+	addDependency("process_depth_mask", &in_depth);
+	addDependency("process_depth_mask", &in_camera_info);	
+	addDependency("process_depth_mask", &in_mask);
+
+	registerHandler("process_depth_color", boost::bind(&DepthConverter::process_depth_color, this));
+	addDependency("process_depth_color", &in_depth);
+	addDependency("process_depth_color", &in_camera_info);
+	addDependency("process_depth_color", &in_color);
+
+	registerHandler("process_depth_mask_color", boost::bind(&DepthConverter::process_depth_mask_color, this));
 	addDependency("process_depth_mask_color", &in_depth);
 	addDependency("process_depth_mask_color", &in_camera_info);	
 	addDependency("process_depth_mask_color", &in_mask);
 	addDependency("process_depth_mask_color", &in_color);
 
 	
-	h_process_depth_color.setup(boost::bind(&DepthConverter::process_depth_color, this));
-	registerHandler("process_depth_color", &h_process_depth_color);
-	addDependency("process_depth_color", &in_depth);
-	addDependency("process_depth_color", &in_color);
-	addDependency("process_depth_color", &in_camera_info);
+	// Register handlers - XYZ depth dependent functions.
+	registerHandler("process_depth_xyz", boost::bind(&DepthConverter::process_depth_xyz, this));
+	addDependency("process_depth_xyz", &in_depth_xyz);
 
+	registerHandler("process_depth_xyz_mask", boost::bind(&DepthConverter::process_depth_xyz_mask, this));
+	addDependency("process_depth_xyz_mask", &in_depth_xyz);
+	addDependency("process_depth_xyz_mask", &in_mask);
 
-    h_process_depth_xyz.setup(boost::bind(&DepthConverter::process_depth_xyz, this));
-    registerHandler("process_depth_xyz", &h_process_depth_xyz);
-    addDependency("process_depth_xyz", &in_depth_xyz);
+	registerHandler("process_depth_xyz_color", boost::bind(&DepthConverter::process_depth_xyz_color, this));
+	addDependency("process_depth_xyz_color", &in_depth_xyz);
+	addDependency("process_depth_xyz_color", &in_color);
 
-    h_process_depth_xyz_rgb_stereo.setup(boost::bind(&DepthConverter::process_depth_xyz_rgb_stereo, this));
-    registerHandler("process_depth_xyz_rgb_stereo", &h_process_depth_xyz_rgb_stereo);
-    addDependency("process_depth_xyz_rgb_stereo", &in_depth_xyz);
-    addDependency("process_depth_xyz_rgb_stereo", &in_rgb_stereo);
-
-    h_process_depth_xyz_mask.setup(boost::bind(&DepthConverter::process_depth_xyz_mask, this));
-    registerHandler("process_depth_xyz_mask", &h_process_depth_xyz_mask);
-    addDependency("process_depth_xyz_mask", &in_depth_xyz);
-    addDependency("process_depth_xyz_mask", &in_mask);
-
-    h_process_depth_xyz_rgb_stereo_mask.setup(boost::bind(&DepthConverter::process_depth_xyz_rgb_stereo_mask, this));
-    registerHandler("process_depth_xyz_rgb_stereo_mask", &h_process_depth_xyz_rgb_stereo_mask);
-    addDependency("process_depth_xyz_rgb_stereo_mask", &in_depth_xyz);
-    addDependency("process_depth_xyz_rgb_stereo_mask", &in_rgb_stereo);
-    addDependency("process_depth_xyz_rgb_stereo_mask", &in_mask);
+	registerHandler("process_depth_xyz_color_mask", boost::bind(&DepthConverter::process_depth_xyz_color_mask, this));
+	addDependency("process_depth_xyz_color_mask", &in_depth_xyz);
+	addDependency("process_depth_xyz_color_mask", &in_color);
+	addDependency("process_depth_xyz_color_mask", &in_mask);
 }
 
 bool DepthConverter::onInit() {
@@ -383,10 +373,10 @@ void DepthConverter::process_depth_xyz() {
     out_cloud_xyz.write(cloud);
 }
 
-void DepthConverter::process_depth_xyz_rgb_stereo() {
-    CLOG(LTRACE) << "DepthConverter::process_depth_xyz_rgb_stereo()"<<endl;
+void DepthConverter::process_depth_xyz_color() {
+    CLOG(LTRACE) << "DepthConverter::process_depth_xyz_color()"<<endl;
     cv::Mat depth_xyz = in_depth_xyz.read();
-    cv::Mat rgb_stereo = in_rgb_stereo.read();
+    cv::Mat color = in_color.read();
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>());
     uint32_t pr, pg, pb;
@@ -396,7 +386,7 @@ void DepthConverter::process_depth_xyz_rgb_stereo() {
     try {
         for(int y = 0; y < depth_xyz.rows; y++)
         {
-            uchar* rgb_ptr = rgb_stereo.ptr<uchar>(y);
+            uchar* rgb_ptr = color.ptr<uchar>(y);
             for(int x = 0; x < depth_xyz.cols; x++)
             {
                 cv::Vec3f point = depth_xyz.at<cv::Vec3f>(y, x);
@@ -438,10 +428,11 @@ void DepthConverter::process_depth_xyz_mask() {
     cv::Mat depth_xyz = in_depth_xyz.read();
     cv::Mat mask = in_mask.read();
     mask.convertTo(mask, CV_32F);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>(depth_xyz.cols,depth_xyz.rows));
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
 
     const double max_z = 1.0e4;
     CLOG(LINFO) << "Generating depth point cloud";
+    int cnt = 0;
     try {
         for(int y = 0; y < depth_xyz.rows; y++)
         {
@@ -453,6 +444,7 @@ void DepthConverter::process_depth_xyz_mask() {
                 cv::Vec3f point = depth_xyz.at<cv::Vec3f>(y, x);
                 if(fabs(point[2] - max_z) < FLT_EPSILON || fabs(point[2]) > max_z) continue;
 
+		cnt++;
                 //Insert info into point cloud structure
                 pcl::PointXYZ point1;
                 point1.x = point[0];
@@ -465,6 +457,8 @@ void DepthConverter::process_depth_xyz_mask() {
     {
         CLOG(LERROR) << "Error occurred in processing input";
     }
+    
+    CLOG(LINFO) << "Converted points: " << cnt;
 
 
     if(prop_remove_nan){
@@ -472,13 +466,14 @@ void DepthConverter::process_depth_xyz_mask() {
         cloud->is_dense = false;
         pcl::removeNaNFromPointCloud(*cloud, *cloud, indices);
     }
+    CLOG(LINFO) << "Converted points: " << cloud->size();
     out_cloud_xyz.write(cloud);
 }
 
-void DepthConverter::process_depth_xyz_rgb_stereo_mask() {
-    CLOG(LTRACE) << "DepthConverter::process_depth_xyz_rgb_stereo_mask()"<<endl;
+void DepthConverter::process_depth_xyz_color_mask() {
+    CLOG(LTRACE) << "DepthConverter::process_depth_xyz_color_mask()"<<endl;
     cv::Mat depth_xyz = in_depth_xyz.read();
-    cv::Mat rgb_stereo = in_rgb_stereo.read();
+    cv::Mat color = in_color.read();
     cv::Mat mask = in_mask.read();
     mask.convertTo(mask, CV_32F);
 
@@ -490,7 +485,7 @@ void DepthConverter::process_depth_xyz_rgb_stereo_mask() {
     try {
         for(int y = 0; y < depth_xyz.rows; y++)
         {
-            uchar* rgb_ptr = rgb_stereo.ptr<uchar>(y);
+            uchar* rgb_ptr = color.ptr<uchar>(y);
             for(int x = 0; x < depth_xyz.cols; x++)
             {
                 if (mask.at<float>(y, x)==0) {

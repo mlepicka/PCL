@@ -42,3 +42,7 @@ ADD_COMPONENT(CloudTransformer)
 ADD_COMPONENT(KeyPointsConverter)
 
 ADD_COMPONENT(CloudConverter)
+
+ADD_COMPONENT(MLSSmoothing)
+
+ADD_COMPONENT(PCDSequence)

@@ -88,6 +88,7 @@ protected:
         Base::Property<bool> negative_x;
         Base::Property<bool> negative_y;
         Base::Property<bool> negative_z;
+        Base::Property<bool> pass_through;
 
 
         // Handlers

@@ -16,7 +16,6 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <Types/PointXYZSIFT.hpp>
-#include <Types/PointXYZSHOT.hpp>
 
 namespace Processors {
 namespace PCDWriter {
@@ -68,31 +67,49 @@ protected:
 	 */
 	bool onStop();
 
-    /// Trigger - used for writing clouds
-    Base::DataStreamIn<Base::UnitType> in_trigger;
+	/// Trigger - used for writing clouds
+	Base::DataStreamIn<Base::UnitType, Base::DataStreamBuffer::Newest> in_save_cloud_trigger;
 
 	/// Cloud containing points with Cartesian coordinates (XYZ).
-    Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZ>::Ptr, Base::DataStreamBuffer::Newest> in_cloud_xyz;
+	Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZ>::Ptr, Base::DataStreamBuffer::Newest> in_cloud_xyz;
 
 	/// Cloud containing points with Cartesian coordinates and colour (XYZ + RGB).
-    Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZRGB>::Ptr, Base::DataStreamBuffer::Newest> in_cloud_xyzrgb;
+	Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZRGB>::Ptr, Base::DataStreamBuffer::Newest> in_cloud_xyzrgb;
 
 	/// Cloud containing points with Cartesian coordinates and SIFT descriptor (XYZ + 128).
-    Base::DataStreamIn<pcl::PointCloud<PointXYZSIFT>::Ptr, Base::DataStreamBuffer::Newest> in_cloud_xyzsift;
+	Base::DataStreamIn<pcl::PointCloud<PointXYZSIFT>::Ptr, Base::DataStreamBuffer::Newest> in_cloud_xyzsift;
 
-    /// Cloud containing points with Cartesian coordinates and SHOT descriptor.
-    Base::DataStreamIn<pcl::PointCloud<PointXYZSHOT>::Ptr, Base::DataStreamBuffer::Newest> in_cloud_xyzshot;
 
-	Base::Property<std::string> filename;
-    Base::Property<bool> binary;
-    Base::Property<bool> suffix;
+	/// Flag indicating that the cloud should be saved to file.
+	bool save_cloud_flag;
+
+	// Properties
+	Base::Property<string> directory;
+	Base::Property<string> base_name;
+	Base::Property<bool> suffix;
+	Base::Property<bool> binary;
+
+	/// Saving mode: continous vs triggered.
+	Base::Property<bool> prop_auto_trigger;
+
+	// Help functions.
+	void Write_xyz();
+	void Write_xyzrgb();
+	void Write_xyzsift();
+	
+	// Prepares filename.
+	std::string prepareName(std::string suffix_);
+
 	// Handlers
-    void Write_xyz();
-    void Write_xyzrgb();
-    void Write_xyzsift();
-    void Write_xyzshot();
-    void onTriggeredLoadNextCloud();
 
+	/// Main handler, called every time when writer gets processor time.
+	void mainHandler();
+
+	/// Event handler function - save cloud.
+	void onSaveCloudButtonPressed();
+
+	/// Event handler function - save cloud, externally triggered version.
+	void onSaveCloudTriggered();
 
 };
 
