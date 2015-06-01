@@ -212,28 +212,28 @@ void PCDSequence::onLoadCloud() {
 		}//: if
 
 		CLOG(LDEBUG) << "Loading cloud from file";
-		if (pcl::io::loadPCDFile<PointXYZSIFT> (files[index], *cloud_xyzsift) == -1){
+		if (pcl::io::loadPCDFile<PointXYZSIFT> (files[index], *cloud_xyzsift) != -1){
 			// Clear the XYZRGB cloud.
 			//cloud_xyzrgb.clear();
 			// Try to read the cloud of XYZSIFT points.
-			out_cloud_xyzsift.write(cloud_xyzsift);
-			CLOG(LINFO) <<"PointXYZSIFT cloud loaded properly from "<<files[index];
+			CLOG(LINFO) <<"PointXYZSIFT cloud of size "<< cloud_xyzsift->size() << " loaded properly from "<<files[index];
 			previous_type = XYZSIFT;
 			previous_index = index;
+			out_cloud_xyzsift.write(cloud_xyzsift);
 		} else if (pcl::io::loadPCDFile<pcl::PointXYZRGB> (files[index], *cloud_xyzrgb) != -1){
 			// Clear the XYZ cloud.
 			//cloud_xyz.clear();
 			// Try to read the cloud of XYZRGB points.
-			out_cloud_xyzrgb.write(cloud_xyzrgb);
-			CLOG(LINFO) <<"PointXYZRGB cloud loaded properly from "<<files[index];
+			CLOG(LINFO) <<"PointXYZRGB cloud of size "<< cloud_xyzrgb->size() << " loaded properly from "<<files[index];
 			previous_type = XYZRGB;
 			previous_index = index;
+			out_cloud_xyzrgb.write(cloud_xyzrgb);
 		} else if (pcl::io::loadPCDFile<pcl::PointXYZ> (files[index], *cloud_xyz) != -1){
 			// Try to read the cloud of XYZ points.
-			out_cloud_xyz.write(cloud_xyz);
-			CLOG(LINFO) <<"PointXYZ cloud loaded properly from "<<files[index];
+			CLOG(LINFO) <<"PointXYZ cloud of size "<< cloud_xyz->size() << " loaded properly from "<<files[index];
 			previous_type = XYZ;
 			previous_index = index;
+			out_cloud_xyz.write(cloud_xyz);
 		} else {
 			//cloud_xyzsift.clear();
 			CLOG(LWARNING) << "Could not read cloud of any type from the file";
