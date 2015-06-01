@@ -168,10 +168,6 @@ private:
 	/// Index of cloud returned in the previous step.
 	int previous_index;
 
-	/// Type of previously returned cloud.
-	PointCloudType previous_type;
-
-
 	/// Flag indicating whether the cloud should be published
 	bool publish_cloud_flag;
 
@@ -194,10 +190,10 @@ private:
 	/// Publishing mode: auto vs triggered.
 	Base::Property<bool> prop_auto_publish_cloud;
 
-	/// Next cloud loading mode: next vs triggered
+	/// Next cloud loading mode: next vs triggered.
 	Base::Property<bool> prop_auto_next_cloud;
 
-	/// Prev cloud loading mode: previous vs triggered
+	/// Prev cloud loading mode: previous vs triggered.
 	Base::Property<bool> prop_auto_prev_cloud;
 
 	/// Loading mode: Clouds loaded in the loop.
@@ -205,6 +201,17 @@ private:
 
 	/// Sort cloud sequence by their names.
 	Base::Property<bool> prop_sort;
+
+
+	/// Property - return xyz cloud.
+	Base::Property<bool> prop_return_xyz;
+
+	/// Property - return xyzrgb cloud.
+	Base::Property<bool> prop_return_xyzrgb;
+
+	/// Property - return xyzsift cloud.
+	Base::Property<bool> prop_return_xyzsift;
+
 
 	/// TODO: loads whole sequence at start.
 //	Base::Property<bool> prop_read_on_init;
