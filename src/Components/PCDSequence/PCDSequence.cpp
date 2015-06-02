@@ -218,33 +218,45 @@ void PCDSequence::onLoadCloud() {
 		CLOG(LDEBUG) << "Loading cloud from file";
 
 		if (prop_return_xyz){
+			// Initialize pointer to empty cloud.
+			pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_xyz_tmp = pcl::PointCloud<pcl::PointXYZ>::Ptr (new pcl::PointCloud<pcl::PointXYZ>);
 			// Try to read the cloud of XYZ points.
-			if (pcl::io::loadPCDFile<pcl::PointXYZ> (files[index], *cloud_xyz) == -1){
+			if (pcl::io::loadPCDFile<pcl::PointXYZ> (files[index], *cloud_xyz_tmp) == -1){
 				CLOG(LWARNING) <<"Cannot read PointXYZ cloud from "<<files[index];
 			}else{
 				previous_index = index;
+				// Override data stored in pointer.
+				cloud_xyz = cloud_xyz_tmp;
 				out_cloud_xyz.write(cloud_xyz);
 				CLOG(LINFO) <<"PointXYZ cloud of size "<< cloud_xyz->size() << " loaded properly from "<<files[index];
 			}//: else
 		}//: else
 
 		if (prop_return_xyzrgb){
+			// Initialize pointer to empty cloud.
+			pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_xyzrgb_tmp = pcl::PointCloud<pcl::PointXYZRGB>::Ptr (new pcl::PointCloud<pcl::PointXYZRGB>);
 			// Try to read the cloud of XYZRGB points.
-			if (pcl::io::loadPCDFile<pcl::PointXYZRGB> (files[index], *cloud_xyzrgb) == -1){
+			if (pcl::io::loadPCDFile<pcl::PointXYZRGB> (files[index], *cloud_xyzrgb_tmp) == -1){
 				CLOG(LWARNING) <<"Cannot read PointXYZRGB cloud from "<<files[index];
 			}else{
 				previous_index = index;
+				// Override data stored in pointer.
+				cloud_xyzrgb = cloud_xyzrgb_tmp;
 				out_cloud_xyzrgb.write(cloud_xyzrgb);
 				CLOG(LINFO) <<"PointXYZRGB cloud of size "<< cloud_xyzrgb->size() << " loaded properly from "<<files[index];
 			}//: else
 		}//: else
 
 		if (prop_return_xyzsift){
+			// Initialize pointer to empty cloud.
+			pcl::PointCloud<PointXYZSIFT>::Ptr cloud_xyzsift_tmp = pcl::PointCloud<PointXYZSIFT>::Ptr (new pcl::PointCloud<PointXYZSIFT>);
 			// Try to read the cloud of XYZSIFT points.
-			if (pcl::io::loadPCDFile<PointXYZSIFT> (files[index], *cloud_xyzsift) == -1){
+			if (pcl::io::loadPCDFile<PointXYZSIFT> (files[index], *cloud_xyzsift_tmp) == -1){
 				CLOG(LWARNING) <<"Cannot read PointXYZSIFT cloud from "<<files[index];
 			}else{
 				previous_index = index;
+				// Override data stored in pointer.
+				cloud_xyzsift = cloud_xyzsift_tmp;
 				out_cloud_xyzsift.write(cloud_xyzsift);
 				CLOG(LINFO) <<"PointXYZSIFT cloud of size "<< cloud_xyzsift->size() << " loaded properly from "<<files[index];
 			}//: else
