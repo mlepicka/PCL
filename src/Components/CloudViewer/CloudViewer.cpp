@@ -19,30 +19,44 @@ namespace CloudViewer {
 
 CloudViewer::CloudViewer(const std::string & name) :
 	Base::Component(name),
-	prop_title("title",std::string("3D PC Viewer")),
+	prop_title("title",std::string("Point Cloud Viewer")),
 	prop_coordinate_system("coordinate_system",boost::bind(&CloudViewer::onCSShowClick, this, _2), true),
 	prop_background_color("background_color", boost::bind(&CloudViewer::onBackgroundColorChange, this, _2), std::string("0,0,0")),
-	normals_scale("normals.scale", 0.1),
-	normals_level("normals.level", 1),
-	prop_sift_size("sift.size", boost::bind(&CloudViewer::onSIFTSizeChange, this, _2), 1),
-	prop_sift_color("sift.color", boost::bind(&CloudViewer::onSIFTColorChange, this, _2), std::string("255,0,0"))
-
+	prop_xyz_display("xyz.display", true),
+	prop_xyzrgb_display("xyzrgb.display", true),
+	prop_xyznormals_display("xyznormals.display", true),
+	prop_xyznormals_scale("xyznormals.scale", 0.1),
+	prop_xyznormals_level("xyznormals.level", 1),
+	prop_xyzsift_display("xyzsift.display", true),
+	prop_xyzsift_size("xyzsift.size", 1),
+	prop_xyzsift_color("xyzsift.color", std::string("255,0,0"))
 {
+	// General properties.
 	registerProperty(prop_title);
 	registerProperty(prop_coordinate_system);
 	registerProperty(prop_background_color);
 
-	registerProperty(prop_sift_size);
-	registerProperty(prop_sift_color);
+	// XYZ properties.
+	registerProperty(prop_xyz_display);
 
-	registerProperty(normals_scale);
-	registerProperty(normals_level);
+	// XYZRGB properties.
+	registerProperty(prop_xyzrgb_display);
+
+	// XYZNormals properties.
+	registerProperty(prop_xyznormals_display);
+	registerProperty(prop_xyznormals_scale);
+	registerProperty(prop_xyznormals_level);
+
+	// XYZSIFT properties.
+	registerProperty(prop_xyzsift_display);
+	registerProperty(prop_xyzsift_size);
+	registerProperty(prop_xyzsift_color);
 
 	viewer = NULL;
 }
 
 void CloudViewer::onCSShowClick(const bool & new_show_cs_) {
-	CLOG(LTRACE) << "CloudViewer::onCSShowClick show=" << new_show_cs_;
+	CLOG(LTRACE) << "onCSShowClick show=" << new_show_cs_;
     if (!viewer)
     	return;
 
@@ -63,66 +77,38 @@ void CloudViewer::onCSShowClick(const bool & new_show_cs_) {
 	prop_coordinate_system = new_show_cs_;
 }
 
+
+bool CloudViewer::parseColor(std::string color_, double & r_, double & g_, double & b_) {
+	CLOG(LTRACE) << "parseColor";
+	CLOG(LDEBUG) << "color=" << color_;
+	try {
+		vector<std::string> strs;
+		boost::split(strs, color_, boost::is_any_of(","));
+		if (strs.size() != 3)
+			throw std::exception();
+		// Try to cast to double and divide by 255.
+		r_ = boost::lexical_cast<double>(strs[0]) /255;
+		g_ = boost::lexical_cast<double>(strs[1]) /255;
+		b_ = boost::lexical_cast<double>(strs[2]) /255;
+
+		CLOG(LINFO) << "r=" << r_ << " g=" << g_ << " b=" << b_;
+		return true;
+	} catch (...) {
+		CLOG(LWARNING) << "parseColor failure - invalid color format. Accepted format: r,g,b";
+		return false;
+	}
+}
+
+
 void CloudViewer::onBackgroundColorChange(std::string color_) {
-	CLOG(LTRACE) << "CloudViewer::onBackgroundColorChange color=" << color_;
-	try {
-		// Parse string.
-		vector<std::string> strs;
-		boost::split(strs, color_, boost::is_any_of(","));
-		if (strs.size() != 3)
-			throw std::exception();
-
-		// Try to cast to double and divide by 255.
-		double r = boost::lexical_cast<double>(strs[0]) /255;
-		double g = boost::lexical_cast<double>(strs[1]) /255;
-		double b = boost::lexical_cast<double>(strs[2]) /255;
-
-		CLOG(LINFO) << "CloudViewer::onBackgroundColorChange r=" << r << " g=" << g << " b=" << b;
-		// Change background color.
-		if (viewer)
-			viewer->setBackgroundColor(r, g, b);
-	} catch (...) {
-		CLOG(LWARNING)
-				<< "CloudViewer::onBackgroundColorChange failed - invalid color format. Accepted format: r,g,b";
-	}
-
+	CLOG(LTRACE) << "onBackgroundColorChange";
+	double r=0, g=0, b=0;
+	parseColor(color_, r, g, b);
+	// Change background color.
+	if (viewer)
+		viewer->setBackgroundColor(r, g, b);
 }
 
-void CloudViewer::onSIFTColorChange(std::string color_) {
-	CLOG(LDEBUG) << "CloudViewer::onSIFTColorChange color=" << color_;
-	try {
-		// Parse string.
-		vector<std::string> strs;
-		boost::split(strs, color_, boost::is_any_of(","));
-		if (strs.size() != 3)
-			throw std::exception();
-
-		// Try to cast to double and divide by 255.
-		double r = boost::lexical_cast<double>(strs[0]) /255;
-		double g = boost::lexical_cast<double>(strs[1]) /255;
-		double b = boost::lexical_cast<double>(strs[2]) /255;
-
-		CLOG(LINFO) << "CloudViewer::onSIFTColorChange r=" << r << " g=" << g << " b=" << b;
-		// Change SIFT color.
-		if (viewer)
-			viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, r, g, b, "xyzsift");
-	} catch (...) {
-		CLOG(LWARNING)
-				<< "CloudViewer::onSIFTColorChange failed - invalid color format. Accepted format: r,g,b";
-	}
-
-}
-
-void CloudViewer::onSIFTSizeChange(int size_){
-	CLOG(LDEBUG) << "CloudViewer::onSIFTSizeChange size=" << size_;
-	try {
-		// Change SIFT size.
-		if (viewer)
-			viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, size_, "xyzsift");
-	} catch (...) {
-		CLOG(LWARNING) << "CloudViewer::onSIFTSizeChange failed";
-	}
-}
 
 CloudViewer::~CloudViewer() {
 }
@@ -162,9 +148,8 @@ void CloudViewer::prepareInterface() {
 
 bool CloudViewer::onInit() {
 
-	CLOG(LTRACE) << "CloudViewer::onInit\n";
+	CLOG(LTRACE) << "onInit\n";
 	viewer = new pcl::visualization::PCLVisualizer(prop_title);
-	//viewer->createViewPort (0.0, 0.0, 0.5, 1.0, v1);
 
 	// Try to change background color.
 	onBackgroundColorChange(prop_background_color);
@@ -175,7 +160,7 @@ bool CloudViewer::onInit() {
 	// Init camera parameters.
 	viewer->initCameraParameters();
 
-	// Add cloud of XYZ type.
+/*	// Add cloud of XYZ type.
 	viewer->addPointCloud<pcl::PointXYZ>(pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>), "xyz");
 
 	// Add cloud of XYZRBG type.
@@ -183,17 +168,13 @@ bool CloudViewer::onInit() {
 
 	// Add cloud of XYZ type - for SIFTs.
 	viewer->addPointCloud<pcl::PointXYZ>(pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>), "xyzsift") ;
-	// Set SIFT's properties.
-	onSIFTColorChange(prop_sift_color);
-	onSIFTSizeChange(prop_sift_size);
 
 	// Add cloud of XYZRBGNormals type.
 	viewer->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal>(
 			pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>()),
 			pcl::PointCloud<pcl::Normal>::Ptr(new pcl::PointCloud<pcl::Normal>()),
-			normals_level, normals_scale, "xyzrgbnormals");
-
-//	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 0.5, "xyz");
+			prop_xyznormals_level, prop_xyznormals_scale, "xyzrgbnormals");
+*/
 	return true;
 }
 
@@ -210,14 +191,21 @@ bool CloudViewer::onStart() {
 }
 
 void CloudViewer::on_cloud_xyz() {
-	CLOG(LTRACE) << "CloudViewer::on_cloud_xyz\n";
+	CLOG(LTRACE) << "on_cloud_xyz\n";
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = in_cloud_xyz.read();
 
-	viewer->updatePointCloud<pcl::PointXYZ> (cloud,"xyz");
+	// UPDATE: Display XYZ cloud if required.
+	if (!prop_xyz_display)
+		viewer->removePointCloud ("xyz");
+	else{
+		if (!viewer->updatePointCloud<pcl::PointXYZ> (cloud,"xyz"))
+			viewer->addPointCloud<pcl::PointXYZ> (cloud,"xyz");
+	}//: else
+
 }
 
 void CloudViewer::on_cloud_xyzrgb() {
-	CLOG(LTRACE) << "CloudViewer::on_cloud_xyzrgb\n";
+	CLOG(LTRACE) << "on_cloud_xyzrgb\n";
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = in_cloud_xyzrgb.read();
 
 	// Filter the NaN points.
@@ -226,13 +214,19 @@ void CloudViewer::on_cloud_xyzrgb() {
 	pcl::removeNaNFromPointCloud(*cloud, *cloud, indices);
 
 	pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> color_distribution(cloud);
-	viewer->updatePointCloud<pcl::PointXYZRGB> (cloud, color_distribution, "xyzrgb");
-//	viewer->removePointCloud("xyzrgb");
-//	viewer->addPointCloud<pcl::PointXYZRGB> (cloud,"xyzrgb");
+
+	// UPDATE: Display cloud only if required.
+	if (!prop_xyzrgb_display)
+		viewer->removePointCloud ("xyzrgb");
+	else{
+		if (!viewer->updatePointCloud<pcl::PointXYZRGB> (cloud, color_distribution, "xyzrgb"))
+			viewer->addPointCloud<pcl::PointXYZRGB> (cloud, color_distribution, "xyzrgb");
+	}//: else
+
 }
 
 void CloudViewer::on_cloud_xyzsift() {
-	CLOG(LTRACE) << "CloudViewer::on_cloud_xyzsift";
+	CLOG(LTRACE) << "on_cloud_xyzsift";
 	pcl::PointCloud<PointXYZSIFT>::Ptr cloud = in_cloud_xyzsift.read();
 
 	// Filter the NaN points.
@@ -244,19 +238,27 @@ void CloudViewer::on_cloud_xyzsift() {
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_xyz(new pcl::PointCloud<pcl::PointXYZ>);
 	pcl::copyPointCloud(*cloud, *cloud_xyz);
 
-	// Update cloud.
-	viewer->updatePointCloud<pcl::PointXYZ> (cloud_xyz,"xyzsift");
 
-	// Update cloud properties.
-	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, prop_sift_size,"xyzsift");
+	// UPDATE: Display cloud only if required.
+	if (!prop_xyzsift_display)
+		viewer->removePointCloud ("xyzsift");
+	else{
+		if (!viewer->updatePointCloud<pcl::PointXYZ> (cloud_xyz, "xyzsift"))
+			viewer->addPointCloud<pcl::PointXYZ> (cloud_xyz, "xyzsift");
+		// Update cloud properties.
+		viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, prop_xyzsift_size,"xyzsift");
+		double r=255, g=0, b=0;
+		if(parseColor(prop_xyzsift_color, r, g, b))
+			viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, r, g, b, "xyzsift");
+	}//: else
 }
 
 void CloudViewer::on_cloud_normals() {
-	CLOG(LERROR) << "CloudViewer::on_cloud_normals not implemented!";
+	CLOG(LERROR) << "on_cloud_normals not implemented!";
 }
 
 void CloudViewer::on_cloud_xyzrgb_normals() {
-	CLOG(LWARNING) << "CloudViewer::on_cloud_xyzrgb_normals";
+	CLOG(LWARNING) << "on_cloud_xyzrgb_normals";
 	pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud = in_cloud_xyzrgb_normals.read();
 
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudRgb(new pcl::PointCloud<pcl::PointXYZRGB>());
@@ -269,9 +271,14 @@ void CloudViewer::on_cloud_xyzrgb_normals() {
 	viewer->removeAllPointClouds();
 	viewer->removeAllShapes();
 
-	pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(cloudRgb);
-	viewer->addPointCloud<pcl::PointXYZRGB>(cloudRgb, rgb, "xyzrgb");
-	viewer->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal>(cloudRgb, normals, normals_level, normals_scale, "xyzrgbnormals");
+	if (!prop_xyznormals_display) {
+/*		viewer->removePointCloud ("xyzrgb");
+		viewer->removePointCloud ("xyzrgbnormals");*/
+	} else {
+		pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(cloudRgb);
+		viewer->addPointCloud<pcl::PointXYZRGB>(cloudRgb, rgb, "xyzrgb");
+		viewer->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal>(cloudRgb, normals, prop_xyznormals_level, prop_xyznormals_scale, "xyzrgbnormals");
+	}//: else
 }
 
 void CloudViewer::on_spin() {
