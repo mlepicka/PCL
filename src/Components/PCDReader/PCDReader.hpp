@@ -84,13 +84,26 @@ protected:
 	/// Cloud containing points with Cartesian coordinates with associated normals (XYZ + normal).
 	//Base::DataStreamIn< pcl::PointCloud<pcl::Normal>::Ptr > in_cloud_normals;
 
-    // Handlers
-    void onTriggeredLoadNextCloud();
-    void Read();
+	// Handlers
+	void onTriggeredLoadNextCloud();
+	void Read();
 
-    //Properties
+	/// Property - filename (including directory).
 	Base::Property<std::string> filename;
+
+	/// Property - return xyz cloud.
+	Base::Property<bool> prop_return_xyz;
+
+	/// Property - return xyzrgb cloud.
+	Base::Property<bool> prop_return_xyzrgb;
+
+	/// Property - return xyzsift cloud.
+	Base::Property<bool> prop_return_xyzsift;
+
+	///  Propery - if set, reads point clouds at start.
 	Base::Property<bool> read_on_init;
+
+
 };
 
 } //: namespace PCDReader

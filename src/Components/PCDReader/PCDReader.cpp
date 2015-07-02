@@ -19,11 +19,19 @@ namespace PCDReader {
 PCDReader::PCDReader(const std::string & name) :
 	Base::Component(name),
 	filename("filename", std::string("")),
-	read_on_init("read_on_init", true)
+	read_on_init("read_on_init", true),
+	prop_return_xyz("cloud.xyz", false),
+	prop_return_xyzrgb("cloud.xyzrgb", false),
+	prop_return_xyzsift("cloud.xyzsift", false)
+
 {
 	// Register property.
 	registerProperty(filename);
+	registerProperty(prop_return_xyz);
+	registerProperty(prop_return_xyzrgb);
+	registerProperty(prop_return_xyzsift);
 	registerProperty(read_on_init);
+
 	CLOG(LTRACE) << "Hi PCDReader\n";
 
 }
@@ -73,38 +81,39 @@ void PCDReader::onTriggeredLoadNextCloud(){
 
 void PCDReader::Read() {
 	CLOG(LTRACE) << "PCDReader::Read";
-	// Try to read the cloud of XYZ points.
-	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_xyz (new pcl::PointCloud<pcl::PointXYZ>);
-/*
-	if (pcl::io::loadPCDFile<pcl::PointXYZ> (filename, *cloud_xyz) == -1){
-		CLOG(LWARNING) <<"Cannot read PointXYZ cloud from "<<filename;
-	}else{
-		out_cloud_xyz.write(cloud_xyz);
-		CLOG(LINFO) <<"PointXYZ size: "<<cloud_xyz->size();
-		CLOG(LINFO) <<"PointXYZ cloud loaded properly from "<<filename;
-        //return;
-	}// else
-*/
 	  
-	// Try to read the cloud of XYZRGB points.
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_xyzrgb (new pcl::PointCloud<pcl::PointXYZRGB>);
-	if (pcl::io::loadPCDFile<pcl::PointXYZRGB> (filename, *cloud_xyzrgb) == -1){
-		CLOG(LWARNING) <<"Cannot read PointXYZRGB cloud from "<<filename;
-	}else{
-		out_cloud_xyzrgb.write(cloud_xyzrgb);
-		CLOG(LINFO) <<"PointXYZRGB cloud loaded properly from "<<filename;
-		//return;
-	}// else
+	if (prop_return_xyz){
+		// Try to read the cloud of XYZ points.
+		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_xyz (new pcl::PointCloud<pcl::PointXYZ>);
+		if (pcl::io::loadPCDFile<pcl::PointXYZ> (filename, *cloud_xyz) == -1){
+			CLOG(LWARNING) <<"Cannot read PointXYZ cloud from "<<filename;
+		}else{
+			out_cloud_xyz.write(cloud_xyz);
+			CLOG(LINFO) <<"PointXYZ cloud of size "<< cloud_xyz->size() << " loaded properly from "<<filename;
+		}//: else
+	}//: else
 
-	// Try to read the cloud of XYZSIFT points.
-	pcl::PointCloud<PointXYZSIFT>::Ptr cloud_xyzsift (new pcl::PointCloud<PointXYZSIFT>);
-	if (pcl::io::loadPCDFile<PointXYZSIFT> (filename, *cloud_xyzsift) == -1){
-		CLOG(LWARNING) <<"Cannot read PointXYZSIFT cloud from "<<filename;
-	}else{
-		out_cloud_xyzsift.write(cloud_xyzsift);
-		CLOG(LINFO) <<"PointXYZSIFT cloud loaded properly from "<<filename;
-	//return;
-	}// else
+	if (prop_return_xyzrgb){
+		// Try to read the cloud of XYZRGB points.
+		pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_xyzrgb (new pcl::PointCloud<pcl::PointXYZRGB>);
+		if (pcl::io::loadPCDFile<pcl::PointXYZRGB> (filename, *cloud_xyzrgb) == -1){
+			CLOG(LWARNING) <<"Cannot read PointXYZRGB cloud from "<<filename;
+		}else{
+			out_cloud_xyzrgb.write(cloud_xyzrgb);
+			CLOG(LINFO) <<"PointXYZRGB cloud of size "<< cloud_xyzrgb->size() << " loaded properly from "<<filename;
+		}//: else
+	}//: else
+
+	if (prop_return_xyzsift){
+		// Try to read the cloud of XYZSIFT points.
+		pcl::PointCloud<PointXYZSIFT>::Ptr cloud_xyzsift (new pcl::PointCloud<PointXYZSIFT>);
+		if (pcl::io::loadPCDFile<PointXYZSIFT> (filename, *cloud_xyzsift) == -1){
+			CLOG(LWARNING) <<"Cannot read PointXYZSIFT cloud from "<<filename;
+		}else{
+			out_cloud_xyzsift.write(cloud_xyzsift);
+			CLOG(LINFO) <<"PointXYZSIFT cloud of size "<< cloud_xyzsift->size() << " loaded properly from "<<filename;
+		}//: else
+	}//: else
 
 }
 

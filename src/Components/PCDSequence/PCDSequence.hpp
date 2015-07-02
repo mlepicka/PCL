@@ -22,6 +22,10 @@
 namespace Processors {
 namespace PCDSequence {
 
+/// Enum for distinguishing returned point clouds.
+enum PointCloudType {NONE, XYZ, XYZRGB, XYZSIFT};
+
+
 /*!
  * \class PCDSequence
  * \brief PCDSequence processor class.
@@ -76,6 +80,10 @@ protected:
 	/// Trigger - used for loading next cloud in case of several sequences present.
 	Base::DataStreamIn<Base::UnitType, Base::DataStreamBuffer::Newest> in_next_cloud_trigger;
 
+	/// Trigger - used for loading previous cloud in case of several sequences present.
+	Base::DataStreamIn<Base::UnitType, Base::DataStreamBuffer::Newest> in_prev_cloud_trigger;
+
+
 	/// Output event - sequence ended.
 	Base::DataStreamOut<Base::UnitType> out_end_of_sequence_trigger;
 
@@ -91,17 +99,28 @@ protected:
 
 
 	/*!
-	* Event handler function - moves cloud index to the next frame of the sequence.
+	* Event handler function - moves cloud index to the next cloud of the sequence.
 	*/
 	void onLoadNextCloud();
 
 	/*!
-	* Event handler function - moves cloud index to the next frame of the sequence, externally triggered version.
+	* Event handler function - moves cloud index to the next cloud of the sequence, externally triggered version.
 	*/
 	void onTriggeredLoadNextCloud();
 
 	/*!
-	 * Event handler function - loads Cloud from the sequence.
+	* Event handler function - moves cloud index to the previous cloud of the sequence.
+	*/
+	void onLoadPrevCloud();
+
+	/*!
+	* Event handler function - moves cloud index to the previous cloud of the sequence, externally triggered version.
+	*/
+	void onTriggeredLoadPrevCloud();
+
+
+	/*!
+	 * Event handler function - loads cloud from the sequence.
 	 */
 	void onLoadCloud();
 
@@ -111,12 +130,12 @@ protected:
 	void onSequenceReload();
 
 	/*!
-	* Event handler function - stream Cloud.
+	* Event handler function - publish cloud.
 	*/
 	void onPublishCloud();
 
 	/*!
-	* Event handler function - stream Cloud, externally triggered version.
+	* Event handler function - publish cloud, externally triggered version.
 	*/
 	void onTriggeredPublishCloud();
 
@@ -143,9 +162,11 @@ private:
 	pcl::PointCloud<PointXYZSIFT>::Ptr cloud_xyzsift;
 
 
-
 	/// Index of current cloud.
 	int index;
+
+	/// Index of cloud returned in the previous step.
+	int previous_index;
 
 	/// Flag indicating whether the cloud should be published
 	bool publish_cloud_flag;
@@ -153,8 +174,11 @@ private:
 	/// Flag indicating whether the next cloud should loaded or not.
 	bool next_cloud_flag;
 
+	/// Flag indicating whether the previous cloud should loaded or not.
+	bool prev_cloud_flag;
+
 	/// Flag indicating whether the sequence should be reloaded or not.
-	bool reload_flag;
+	bool reload_sequence_flag;
 
 
 	/// Directory containing the Clouds sequence.
@@ -166,8 +190,11 @@ private:
 	/// Publishing mode: auto vs triggered.
 	Base::Property<bool> prop_auto_publish_cloud;
 
-	/// Next Cloud loading mode: next vs triggered
+	/// Next cloud loading mode: next vs triggered.
 	Base::Property<bool> prop_auto_next_cloud;
+
+	/// Prev cloud loading mode: previous vs triggered.
+	Base::Property<bool> prop_auto_prev_cloud;
 
 	/// Loading mode: Clouds loaded in the loop.
 	Base::Property<bool> prop_loop;
@@ -175,8 +202,19 @@ private:
 	/// Sort cloud sequence by their names.
 	Base::Property<bool> prop_sort;
 
-	/// Returns cloud right after start.
-	Base::Property<bool> prop_read_on_init;	
+
+	/// Property - return xyz cloud.
+	Base::Property<bool> prop_return_xyz;
+
+	/// Property - return xyzrgb cloud.
+	Base::Property<bool> prop_return_xyzrgb;
+
+	/// Property - return xyzsift cloud.
+	Base::Property<bool> prop_return_xyzsift;
+
+
+	/// TODO: loads whole sequence at start.
+//	Base::Property<bool> prop_read_on_init;
 
 };
 

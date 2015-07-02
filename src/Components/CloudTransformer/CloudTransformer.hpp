@@ -94,6 +94,9 @@ protected:
 	void transform_xyzsift(Types::HomogMatrix hm_);
 	void transform_xyzshot(Types::HomogMatrix hm_);
 
+	// Property - if true, the component will not transform the input cloud.
+        Base::Property<bool> pass_through;
+
 };
 
 } //: namespace CloudTransformer

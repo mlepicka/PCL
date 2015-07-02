@@ -17,16 +17,17 @@ namespace PassThrough {
 
 PassThrough::PassThrough(const std::string & name) :
 		Base::Component(name) , 
-        xa("x.a", 0),
-        xb("x.b", 0),
-        ya("y.a", 0),
-        yb("y.b", 0),
-        za("z.a", 0),
-        zb("z.b", 0),
+        xa("x.min", 0),
+        xb("x.max", 0),
+        ya("y.min", 0),
+        yb("y.max", 0),
+        za("z.min", 0),
+        zb("z.max", 0),
         negative_x("negative_x", false),
         negative_y("negative_y", false),
         negative_z("negative_z", false),
-		pass_through("pass_through", false) {
+	pass_through("pass_through", false)
+{
 	registerProperty(xa);
 	registerProperty(xb);
 	registerProperty(ya);
@@ -77,69 +78,78 @@ bool PassThrough::onStart() {
 }
 
 void PassThrough::filter_xyz() {
-    LOG(LTRACE) <<"PassThrough::filter_xyz()";
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = in_cloud_xyz.read();
+	CLOG(LTRACE) <<"filter_xyz()";
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = in_cloud_xyz.read();
 
-    if (!pass_through) {
+	if (!pass_through) {
+		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZ>);
 		pcl::PassThrough<pcl::PointXYZ> pass;
 		pass.setInputCloud (cloud);
 		pass.setFilterFieldName ("x");
 		pass.setFilterLimits (xa, xb);
 		pass.setFilterLimitsNegative (negative_x);
-		pass.filter (*cloud);
+		pass.filter (*cloud_filtered);
+		// Set resulting cloud as input.
+		pass.setInputCloud (cloud_filtered);
 		pass.setFilterFieldName ("y");
 		pass.setFilterLimits (ya, yb);
 		pass.setFilterLimitsNegative (negative_y);
-		pass.filter (*cloud);
+		pass.filter (*cloud_filtered);
 		pass.setFilterFieldName ("z");
 		pass.setFilterLimits (za, zb);
 		pass.setFilterLimitsNegative (negative_z);
-		pass.filter (*cloud);
-    }
-
-    out_cloud_xyz.write(cloud);
+		pass.filter (*cloud_filtered);
+		out_cloud_xyz.write(cloud_filtered);
+	} else 
+		out_cloud_xyz.write(cloud);
 }
 
 void PassThrough::filter_xyzrgb() {
-    LOG(LTRACE) <<"PassThrough::filter_xyzrgb()";
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = in_cloud_xyzrgb.read();
+	LOG(LTRACE) <<"filter_xyzrgb()";
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = in_cloud_xyzrgb.read();
 
-    if (!pass_through) {
+	if (!pass_through) {
+		pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZRGB>);
 		pcl::PassThrough<pcl::PointXYZRGB> pass;
 		pass.setInputCloud (cloud);
 		pass.setFilterFieldName ("x");
 		pass.setFilterLimits (xa, xb);
 		pass.setFilterLimitsNegative (negative_x);
-		pass.filter (*cloud);
+		pass.filter (*cloud_filtered);
+		// Set resulting cloud as input.
+		pass.setInputCloud (cloud_filtered);
 		pass.setFilterFieldName ("y");
 		pass.setFilterLimits (ya, yb);
 		pass.setFilterLimitsNegative (negative_y);
-		pass.filter (*cloud);
+		pass.filter (*cloud_filtered);
 		pass.setFilterFieldName ("z");
 		pass.setFilterLimits (za, zb);
 		pass.setFilterLimitsNegative (negative_z);
-		pass.filter (*cloud);
-	}
+		pass.filter (*cloud_filtered);
+		out_cloud_xyzrgb.write(cloud_filtered);
+	} else 
+		out_cloud_xyzrgb.write(cloud);
 
-    out_cloud_xyzrgb.write(cloud);
 }
 
 void PassThrough::filter_xyzsift() {
-    LOG(LTRACE) <<"PassThrough::filter_xyzsift()";
+    LOG(LTRACE) <<"filter_xyzsift()";
 	pcl::PointCloud<PointXYZSIFT>::Ptr cloud = in_cloud_xyzsift.read();
 
 	if (!pass_through) {
-		applyFilter(cloud, *cloud, "x", xa, xb, negative_x);
-		applyFilter(cloud, *cloud, "y", ya, yb, negative_y);
-		applyFilter(cloud, *cloud, "z", za, zb, negative_z);
-	}
+		pcl::PointCloud<PointXYZSIFT>::Ptr cloud_filtered (new pcl::PointCloud<PointXYZSIFT>);
+		applyFilter(cloud, *cloud_filtered, "x", xa, xb, negative_x);
+		applyFilter(cloud_filtered, *cloud_filtered, "y", ya, yb, negative_y);
+		applyFilter(cloud_filtered, *cloud_filtered, "z", za, zb, negative_z);
+		out_cloud_xyzsift.write(cloud_filtered);
+	} else 
+		out_cloud_xyzsift.write(cloud);
 
-	out_cloud_xyzsift.write(cloud);
 }
 
 void PassThrough::applyFilter (pcl::PointCloud<PointXYZSIFT>::Ptr input, pcl::PointCloud<PointXYZSIFT> &output, std::string filter_field_name, float min, float max, bool negative)
 {
-    CLOG(LTRACE) << "PassThrough::applyFilter() " << filter_field_name;
+    CLOG(LTRACE) << "applyFilter() " << filter_field_name;
     output.header = input->header;
     output.sensor_origin_ = input->sensor_origin_;
     output.sensor_orientation_ = input->sensor_orientation_;
@@ -155,7 +165,7 @@ void PassThrough::applyFilter (pcl::PointCloud<PointXYZSIFT>::Ptr input, pcl::Po
 
 void PassThrough::applyFilterIndices (std::vector<int> &indices, pcl::PointCloud<PointXYZSIFT>::Ptr input, std::string filter_field_name, float min, float max, bool negative)
 {
-    CLOG(LTRACE) << "PassThrough::applyFilterIndices() " << filter_field_name;
+    CLOG(LTRACE) << "applyFilterIndices() " << filter_field_name;
     pcl::IndicesPtr indices_(new vector<int>);
     for(int i = 0; i < input->size(); i++){
         indices_->push_back(i);
@@ -188,7 +198,7 @@ void PassThrough::applyFilterIndices (std::vector<int> &indices, pcl::PointCloud
         int distance_idx = pcl::getFieldIndex (*input, filter_field_name, fields);
         if (distance_idx == -1)
         {
-            CLOG(LWARNING) << "PassThrough::applyFilterIndices Unable to find field name in point type.";
+            CLOG(LWARNING) << "applyFilterIndices Unable to find field name in point type.";
             indices.clear ();
             return;
         }

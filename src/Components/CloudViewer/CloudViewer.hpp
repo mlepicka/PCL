@@ -78,12 +78,12 @@ protected:
 	Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZRGB>::Ptr, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_cloud_xyzrgb;
 
 	/// Data stream with cloud of XYZ SIFTs.
-    Base::DataStreamIn<pcl::PointCloud<PointXYZSIFT>::Ptr, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_cloud_xyzsift;
+	Base::DataStreamIn<pcl::PointCloud<PointXYZSIFT>::Ptr, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_cloud_xyzsift;
 
 	/// Data stream with cloud of XYZ points with normals.
-    Base::DataStreamIn< pcl::PointCloud<pcl::Normal>::Ptr, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_cloud_normals;
+	Base::DataStreamIn< pcl::PointCloud<pcl::Normal>::Ptr, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_cloud_normals;
 
-    /// Data stream with cloud of XYZRGB points with normals.
+	/// Data stream with cloud of XYZRGB points with normals.
 	Base::DataStreamIn< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_cloud_xyzrgb_normals;
 
 	// Handlers
@@ -103,17 +103,37 @@ protected:
 	/// Property: background color. As default it is set to 1 row with 0, 0, 0 (black).
 	Base::Property<std::string> prop_background_color;
 
-	/// Property: color of sift points. As default it is set to 1 row with 255, 0, 0 (red).
-	Base::Property<std::string> prop_sift_color;
+	/// Display/hide XYZ cloud.
+	Base::Property<bool> prop_xyz_display;
 
-	/// Property: size of sift points. As default it is set to 1.
-	Base::Property<float> prop_sift_size;
+	/// Display/hide XYZRGB cloud.
+	Base::Property<bool> prop_xyzrgb_display;
 
-	Base::Property<float> normals_scale;
-	Base::Property<int> normals_level;
 
+
+	/// Display/hide XYZNormals cloud.
+	Base::Property<bool> prop_xyznormals_display;
+
+	/// Property: scale denoting how long the normal vector should be. 
+	Base::Property<float> prop_xyznormals_scale;
+
+	/// Property: level denoting display only every level'th point (default: 1, 100 COUSES ERROR).
+	Base::Property<int> prop_xyznormals_level;
+
+
+
+	/// Display/hide XYZSIFT cloud.
+	Base::Property<bool> prop_xyzsift_display;
+
+	/// Property: color of SIFT points. As default it is set to 1 row with 255, 0, 0 (red).
+	Base::Property<std::string> prop_xyzsift_color;
+
+	/// Property: size of SIFT points. As default it is set to 1.
+	Base::Property<float> prop_xyzsift_size;
+
+
+	/// Viewer.	
 	pcl::visualization::PCLVisualizer * viewer;
-	int v1;
 
 	/// Handler for showing/hiding coordinate system.
 	void onCSShowClick(const bool & new_show_cs_);
@@ -121,11 +141,9 @@ protected:
 	/// Handler for changing background color.
 	void onBackgroundColorChange(std::string color_);
 
-	/// Handler for changing SIFT color.
-	void onSIFTColorChange(std::string color_);
+	/// Parses colour in format r,g,b. Returns false if failed.
+	bool parseColor(std::string color_, double & r_, double & g_, double & b_);
 
-	/// Handler for changing SIFT size.
-	void onSIFTSizeChange(int size_);
 };
 
 } //: namespace CloudViewer

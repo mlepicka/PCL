@@ -79,20 +79,20 @@ bool PCDWriter::onStart() {
 
 
 void PCDWriter::onSaveCloudButtonPressed() {
-	CLOG(LDEBUG) << "PCDWriter::onSaveCloudTriggered";
+	CLOG(LDEBUG) << "onSaveCloudTriggered";
 	save_cloud_flag = true;
 }
 
 
 void PCDWriter::onSaveCloudTriggered() {
-	CLOG(LDEBUG) << "PCDWriter::onSaveCloudTriggered";
+	CLOG(LDEBUG) << "onSaveCloudTriggered";
 	in_save_cloud_trigger.read();
 	save_cloud_flag = true;
 }
 
 
 void PCDWriter::mainHandler () {
-	CLOG(LTRACE) << "PCDWriter::mainHandler";
+	CLOG(LTRACE) << "mainHandler";
 	// Check working mode - if save flag not set or !auto_trigger - do nothing.
 	if (!prop_auto_trigger && !save_cloud_flag)
 		return;
@@ -110,7 +110,7 @@ void PCDWriter::mainHandler () {
 
 
 std::string PCDWriter::prepareName(std::string suffix_) {
-	CLOG(LTRACE) << "PCDWriter::prepareName";
+	CLOG(LTRACE) << "prepareName";
 	// Get current time.	
 	boost::posix_time::ptime tm = boost::posix_time::microsec_clock::local_time();
 	// Generate name
@@ -132,35 +132,35 @@ std::string PCDWriter::prepareName(std::string suffix_) {
 
 
 void PCDWriter::Write_xyz() {
-	CLOG(LTRACE) << "PCDWriter::Write_xyz";
+	CLOG(LTRACE) << "Write_xyz";
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = in_cloud_xyz.read();
 
 	std::string fn = prepareName("_xyz.pcd");
 	pcl::io::savePCDFile (fn, *cloud, binary);
 
-	CLOG(LINFO) << "Saved " << cloud->points.size () << " XYZ points to "<< fn << std::endl;
+	CLOG(LNOTICE) << "Saved " << cloud->points.size () << " XYZ points to "<< fn << std::endl;
 }
 
 
 void PCDWriter::Write_xyzrgb() {
-	CLOG(LTRACE) << "PCDWriter::Write_xyzrgb";
+	CLOG(LTRACE) << "Write_xyzrgb";
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = in_cloud_xyzrgb.read();
 
 	std::string fn = prepareName("_xyzrgb.pcd");
 	pcl::io::savePCDFile (fn, *cloud, binary);
 
-	CLOG(LINFO) << "Saved " << cloud->points.size () << " XYZRGB points to "<< fn << std::endl;
+	CLOG(LNOTICE) << "Saved " << cloud->points.size () << " XYZRGB points to "<< fn << std::endl;
 }
 
 
 void PCDWriter::Write_xyzsift() {
-	CLOG(LTRACE) << "PCDWriter::Write_xyzsift";
+	CLOG(LTRACE) << "Write_xyzsift";
 	pcl::PointCloud<PointXYZSIFT>::Ptr cloud = in_cloud_xyzsift.read();
 
 	std::string fn = prepareName("_xyzsift.pcd");
 	pcl::io::savePCDFile (fn, *cloud, binary);
 
-	CLOG(LINFO) << "Saved " << cloud->points.size () << " XYZSIFT points to "<< fn << std::endl;
+	CLOG(LNOTICE) << "Saved " << cloud->points.size () << " XYZSIFT points to "<< fn << std::endl;
 }
 
 

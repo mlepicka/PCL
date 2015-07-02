@@ -16,8 +16,10 @@ namespace Processors {
 namespace CloudTransformer {
 
 CloudTransformer::CloudTransformer(const std::string & name) :
-		Base::Component(name)  {
-
+	Base::Component(name),
+	pass_through("pass_through", false)
+{
+	registerProperty(pass_through);
 }
 
 CloudTransformer::~CloudTransformer() {
@@ -59,7 +61,7 @@ bool CloudTransformer::onStart() {
 }
 
 void CloudTransformer::transform_clouds() {
-    CLOG(LTRACE) << "CloudTransformer::transform_clouds()";
+    CLOG(LTRACE) << "transform_clouds()";
 
     // Read hmomogenous matrix.
     Types::HomogMatrix hm = in_hm.read();
@@ -83,47 +85,67 @@ void CloudTransformer::transform_clouds() {
 
 
 void CloudTransformer::transform_xyz(Types::HomogMatrix hm_) {
-	CLOG(LTRACE) << "CloudTransformer::transform_xyz()";
+	CLOG(LTRACE) << "transform_xyz()";
 	// Reads clouds.
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = in_cloud_xyz.read();
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2(new pcl::PointCloud<pcl::PointXYZ>());
 
-	// Transform cloud.
-	pcl::transformPointCloud(*cloud, *cloud2, hm_) ;
-	out_cloud_xyz.write(cloud2);
+	if (!pass_through) {
+		// Transform cloud.
+		pcl::transformPointCloud(*cloud, *cloud2, hm_) ;
+		out_cloud_xyz.write(cloud2);
+	} else {
+		// Return input cloud.
+		out_cloud_xyz.write(cloud);
+	}
 }
 
 void CloudTransformer::transform_xyzrgb(Types::HomogMatrix hm_) {
-	CLOG(LTRACE) << "CloudTransformer::transform_xyzrgb()";
+	CLOG(LTRACE) << "transform_xyzrgb()";
 	// Reads clouds.
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = in_cloud_xyzrgb.read();
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud2(new pcl::PointCloud<pcl::PointXYZRGB>());
 
-	// Transform cloud.
-	pcl::transformPointCloud(*cloud, *cloud2, hm_) ;
-	out_cloud_xyzrgb.write(cloud2);
+	if (!pass_through) {
+		// Transform cloud.
+		pcl::transformPointCloud(*cloud, *cloud2, hm_) ;
+		out_cloud_xyzrgb.write(cloud2);
+	} else {
+		// Return input cloud.
+		out_cloud_xyzrgb.write(cloud);
+	}
 }
 
 void CloudTransformer::transform_xyzsift(Types::HomogMatrix hm_) {
-	CLOG(LTRACE) << "CloudTransformer::transform_xyzsift()";
+	CLOG(LTRACE) << "transform_xyzsift()";
 	// Reads clouds.
 	pcl::PointCloud<PointXYZSIFT>::Ptr cloud = in_cloud_xyzsift.read();
 	pcl::PointCloud<PointXYZSIFT>::Ptr cloud2(new pcl::PointCloud<PointXYZSIFT>());
 
-	// Transform cloud.
-	pcl::transformPointCloud(*cloud, *cloud2, hm_) ;
-	out_cloud_xyzsift.write(cloud2);
+	if (!pass_through) {
+		// Transform cloud.
+		pcl::transformPointCloud(*cloud, *cloud2, hm_) ;
+		out_cloud_xyzsift.write(cloud2);
+	} else {
+		// Return input cloud.
+		out_cloud_xyzsift.write(cloud);
+	}
 }
 
 void CloudTransformer::transform_xyzshot(Types::HomogMatrix hm_) {
-	CLOG(LTRACE) << "CloudTransformer::transform_xyzshot()";
+	CLOG(LTRACE) << "transform_xyzshot()";
 	// Reads clouds.
 	pcl::PointCloud<PointXYZSHOT>::Ptr cloud = in_cloud_xyzshot.read();
 	pcl::PointCloud<PointXYZSHOT>::Ptr cloud2(new pcl::PointCloud<PointXYZSHOT>());
 
-	// Transform cloud.
-	pcl::transformPointCloud(*cloud, *cloud2, hm_) ;
-	out_cloud_xyzshot.write(cloud2);
+	if (!pass_through) {
+		// Transform cloud.
+		pcl::transformPointCloud(*cloud, *cloud2, hm_) ;
+		out_cloud_xyzshot.write(cloud2);
+	} else {
+		// Return input cloud.
+		out_cloud_xyzshot.write(cloud);
+	}
 }
 
 
