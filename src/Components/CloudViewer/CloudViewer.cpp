@@ -56,13 +56,14 @@ CloudViewer::CloudViewer(const std::string & name) :
 }
 
 void CloudViewer::onCSShowClick(const bool & new_show_cs_) {
-	CLOG(LTRACE) << "onCSShowClick show=" << new_show_cs_;
+	CLOG(LDEBUG) << "onCSShowClick show=" << new_show_cs_;
     if (!viewer)
     	return;
 
 	if (new_show_cs_) {
 //#if PCL_VERSION_COMPARE(>=,1,7,1)
 		viewer->addCoordinateSystem (); 
+	
 //#endif
 	// TODO: Currently only 1.7.1 is available in the 012/031 laboratories.
 	// TODO: Fix for other versions of PCL.
