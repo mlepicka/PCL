@@ -134,11 +134,13 @@ std::string PCDWriter::prepareName(std::string suffix_) {
 void PCDWriter::Write_xyz() {
 	CLOG(LTRACE) << "Write_xyz";
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = in_cloud_xyz.read();
-
-	std::string fn = prepareName("_xyz.pcd");
-	pcl::io::savePCDFile (fn, *cloud, binary);
-
-	CLOG(LNOTICE) << "Saved " << cloud->points.size () << " XYZ points to "<< fn << std::endl;
+	
+	if (cloud->points.size() != 0) {
+		std::string fn = prepareName("_xyz.pcd");
+		pcl::io::savePCDFile (fn, *cloud, binary);
+		CLOG(LNOTICE) << "Saved " << cloud->points.size () << " XYZ points to "<< fn;
+	} else
+		CLOG(LWARNING) << "Cloud contains no XYZ points, thus save to file skipped";
 }
 
 
@@ -146,10 +148,12 @@ void PCDWriter::Write_xyzrgb() {
 	CLOG(LTRACE) << "Write_xyzrgb";
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = in_cloud_xyzrgb.read();
 
-	std::string fn = prepareName("_xyzrgb.pcd");
-	pcl::io::savePCDFile (fn, *cloud, binary);
-
-	CLOG(LNOTICE) << "Saved " << cloud->points.size () << " XYZRGB points to "<< fn << std::endl;
+	if (cloud->points.size() != 0) {
+		std::string fn = prepareName("_xyzrgb.pcd");
+		pcl::io::savePCDFile (fn, *cloud, binary);
+		CLOG(LNOTICE) << "Saved " << cloud->points.size () << " XYZRGB points to "<< fn;
+	} else
+		CLOG(LWARNING) << "Cloud contains no XYZRGB points, thus save to file skipped";
 }
 
 
@@ -157,10 +161,12 @@ void PCDWriter::Write_xyzsift() {
 	CLOG(LTRACE) << "Write_xyzsift";
 	pcl::PointCloud<PointXYZSIFT>::Ptr cloud = in_cloud_xyzsift.read();
 
-	std::string fn = prepareName("_xyzsift.pcd");
-	pcl::io::savePCDFile (fn, *cloud, binary);
-
-	CLOG(LNOTICE) << "Saved " << cloud->points.size () << " XYZSIFT points to "<< fn << std::endl;
+	if (cloud->points.size() != 0) {
+		std::string fn = prepareName("_xyzsift.pcd");
+		pcl::io::savePCDFile (fn, *cloud, binary);
+		CLOG(LNOTICE) << "Saved " << cloud->points.size () << " XYZSIFT points to "<< fn << std::endl;
+	} else
+		CLOG(LWARNING) << "Cloud contains no XYZSIFT points, thus save to file skipped";
 }
 
 
