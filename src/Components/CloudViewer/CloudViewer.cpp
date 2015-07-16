@@ -20,8 +20,8 @@ namespace CloudViewer {
 CloudViewer::CloudViewer(const std::string & name) :
 	Base::Component(name),
 	prop_title("title",std::string("Point Cloud Viewer")),
-	prop_coordinate_system("coordinate_system",boost::bind(&CloudViewer::onCSShowClick, this, _2), true),
-	prop_background_color("background_color", boost::bind(&CloudViewer::onBackgroundColorChange, this, _2), std::string("0,0,0")),
+	prop_coordinate_system("coordinate_system", true),
+	prop_background_color("background_color", std::string("0,0,0")),
 	prop_xyz_display("xyz.display", true),
 	prop_xyzrgb_display("xyzrgb.display", true),
 	prop_xyznormals_display("xyznormals.display", true),
@@ -55,29 +55,6 @@ CloudViewer::CloudViewer(const std::string & name) :
 	viewer = NULL;
 }
 
-void CloudViewer::onCSShowClick(const bool & new_show_cs_) {
-	CLOG(LDEBUG) << "onCSShowClick show=" << new_show_cs_;
-    if (!viewer)
-    	return;
-
-	if (new_show_cs_) {
-//#if PCL_VERSION_COMPARE(>=,1,7,1)
-		viewer->addCoordinateSystem (); 
-	
-//#endif
-	// TODO: Currently only 1.7.1 is available in the 012/031 laboratories.
-	// TODO: Fix for other versions of PCL.
-	} else {
-//#if PCL_VERSION_COMPARE(>=,1,7,1)
-		viewer->removeCoordinateSystem ();
-//#endif
-	// TODO: Currently only 1.7.1 is available in the 012/031 laboratories.
-	// TODO: Fix for other versions of PCL.
-	}
-
-	prop_coordinate_system = new_show_cs_;
-}
-
 
 bool CloudViewer::parseColor(std::string color_, double & r_, double & g_, double & b_) {
 	CLOG(LTRACE) << "parseColor";
@@ -92,7 +69,7 @@ bool CloudViewer::parseColor(std::string color_, double & r_, double & g_, doubl
 		g_ = boost::lexical_cast<double>(strs[1]) /255;
 		b_ = boost::lexical_cast<double>(strs[2]) /255;
 
-		CLOG(LINFO) << "r=" << r_ << " g=" << g_ << " b=" << b_;
+		CLOG(LDEBUG) << "r=" << r_ << " g=" << g_ << " b=" << b_;
 		return true;
 	} catch (...) {
 		CLOG(LWARNING) << "parseColor failure - invalid color format. Accepted format: r,g,b";
@@ -100,15 +77,6 @@ bool CloudViewer::parseColor(std::string color_, double & r_, double & g_, doubl
 	}
 }
 
-
-void CloudViewer::onBackgroundColorChange(std::string color_) {
-	CLOG(LTRACE) << "onBackgroundColorChange";
-	double r=0, g=0, b=0;
-	parseColor(color_, r, g, b);
-	// Change background color.
-	if (viewer)
-		viewer->setBackgroundColor(r, g, b);
-}
 
 
 CloudViewer::~CloudViewer() {
@@ -124,42 +92,38 @@ void CloudViewer::prepareInterface() {
 
 	// Register handlers
 	registerHandler("on_cloud_xyz",
-			boost::bind(&CloudViewer::on_cloud_xyz, this));
+	boost::bind(&CloudViewer::on_cloud_xyz, this));
 	addDependency("on_cloud_xyz", &in_cloud_xyz);
 
 	registerHandler("on_cloud_xyzrgb",
-			boost::bind(&CloudViewer::on_cloud_xyzrgb, this));
+	boost::bind(&CloudViewer::on_cloud_xyzrgb, this));
 	addDependency("on_cloud_xyzrgb", &in_cloud_xyzrgb);
 
 	registerHandler("on_cloud_xyzsift",
-			boost::bind(&CloudViewer::on_cloud_xyzsift, this));
+	boost::bind(&CloudViewer::on_cloud_xyzsift, this));
 	addDependency("on_cloud_xyzsift", &in_cloud_xyzsift);
 
 	registerHandler("on_cloud_normals",
-			boost::bind(&CloudViewer::on_cloud_normals, this));
+	boost::bind(&CloudViewer::on_cloud_normals, this));
 	addDependency("on_cloud_normals", &in_cloud_normals);
 
 	registerHandler("on_spin", boost::bind(&CloudViewer::on_spin, this));
 	addDependency("on_spin", NULL);
 
 	registerHandler("on_cloud_xyzrgb_normals",
-			boost::bind(&CloudViewer::on_cloud_xyzrgb_normals, this));
+	boost::bind(&CloudViewer::on_cloud_xyzrgb_normals, this));
 	addDependency("on_cloud_xyzrgb_normals", &in_cloud_xyzrgb_normals);
 }
 
 bool CloudViewer::onInit() {
-
-	CLOG(LTRACE) << "onInit\n";
+	CLOG(LTRACE) << "onInit";
 	viewer = new pcl::visualization::PCLVisualizer(prop_title);
-
-	// Try to change background color.
-	onBackgroundColorChange(prop_background_color);
-
-	// Display/hide coordinate system.
-	onCSShowClick(prop_coordinate_system);
 
 	// Init camera parameters.
 	viewer->initCameraParameters();
+
+	// Init flag.
+	coordinate_system_status_flag = !prop_coordinate_system;
 
 /*	// Add cloud of XYZ type.
 	viewer->addPointCloud<pcl::PointXYZ>(pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>), "xyz");
@@ -192,7 +156,7 @@ bool CloudViewer::onStart() {
 }
 
 void CloudViewer::on_cloud_xyz() {
-	CLOG(LTRACE) << "on_cloud_xyz\n";
+	CLOG(LTRACE) << "on_cloud_xyz";
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = in_cloud_xyz.read();
 
 	// UPDATE: Display XYZ cloud if required.
@@ -206,7 +170,7 @@ void CloudViewer::on_cloud_xyz() {
 }
 
 void CloudViewer::on_cloud_xyzrgb() {
-	CLOG(LTRACE) << "on_cloud_xyzrgb\n";
+	CLOG(LTRACE) << "on_cloud_xyzrgb";
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = in_cloud_xyzrgb.read();
 
 	// Filter the NaN points.
@@ -259,7 +223,7 @@ void CloudViewer::on_cloud_normals() {
 }
 
 void CloudViewer::on_cloud_xyzrgb_normals() {
-	CLOG(LWARNING) << "on_cloud_xyzrgb_normals";
+	CLOG(LTRACE) << "on_cloud_xyzrgb_normals";
 	pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud = in_cloud_xyzrgb_normals.read();
 
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudRgb(new pcl::PointCloud<pcl::PointXYZRGB>());
@@ -283,6 +247,32 @@ void CloudViewer::on_cloud_xyzrgb_normals() {
 }
 
 void CloudViewer::on_spin() {
+	CLOG(LTRACE) << "on_spin";
+
+	if (!viewer)
+		return;
+
+	// Change background color.
+	double r=0, g=0, b=0;
+	parseColor(prop_background_color, r, g, b);
+	viewer->setBackgroundColor(r, g, b);
+
+	// Show/hide coordinate system.
+	CLOG(LDEBUG) << "prop_coordinate_system="<<prop_coordinate_system;
+	if (coordinate_system_status_flag != prop_coordinate_system) {
+		if (prop_coordinate_system) {
+			// TODO: Currently only 1.7.1/1.7.2 is available in the 012/031/032 laboratories. Fix for other versions of PCL.
+			//#if PCL_VERSION_COMPARE(>=,1,7,1)
+				viewer->addCoordinateSystem ();
+
+			//#endif
+		} else {
+				viewer->removeCoordinateSystem ();
+		}//: else
+		coordinate_system_status_flag = prop_coordinate_system;
+	}
+
+	// Refresh viewer.
 	viewer->spinOnce(100);
 }
 

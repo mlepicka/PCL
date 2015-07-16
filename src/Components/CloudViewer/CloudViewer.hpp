@@ -100,6 +100,10 @@ protected:
 	/// Property: display/hide coordinate system.
 	Base::Property<bool> prop_coordinate_system;
 
+	/// Flag indicating whether coordinate system is already displayed or not.
+	bool coordinate_system_status_flag;
+
+
 	/// Property: background color. As default it is set to 1 row with 0, 0, 0 (black).
 	Base::Property<std::string> prop_background_color;
 
@@ -132,14 +136,8 @@ protected:
 	Base::Property<float> prop_xyzsift_size;
 
 
-	/// Viewer.	
+	/// Viewer.
 	pcl::visualization::PCLVisualizer * viewer;
-
-	/// Handler for showing/hiding coordinate system.
-	void onCSShowClick(const bool & new_show_cs_);
-
-	/// Handler for changing background color.
-	void onBackgroundColorChange(std::string color_);
 
 	/// Parses colour in format r,g,b. Returns false if failed.
 	bool parseColor(std::string color_, double & r_, double & g_, double & b_);
