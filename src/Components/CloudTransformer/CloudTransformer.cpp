@@ -17,9 +17,11 @@ namespace CloudTransformer {
 
 CloudTransformer::CloudTransformer(const std::string & name) :
 	Base::Component(name),
-	pass_through("pass_through", false)
+    pass_through("pass_through", false),
+    inverse("inverse", false)
 {
 	registerProperty(pass_through);
+    registerProperty(inverse);
 }
 
 CloudTransformer::~CloudTransformer() {
@@ -65,6 +67,11 @@ void CloudTransformer::transform_clouds() {
 
     // Read hmomogenous matrix.
     Types::HomogMatrix hm = in_hm.read();
+
+    if(inverse){
+        Types::HomogMatrix hmi(hm.inverse());
+        hm = hmi;
+    }
 
     // Try to transform XYZ.
     if(!in_cloud_xyz.empty())

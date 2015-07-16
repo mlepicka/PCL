@@ -26,12 +26,12 @@
                                         <param name="filename">/home/discode/models/scena/remsey_oneview_xyzsift.pcd</param>
                                 </Component>
                                 <Component name="PassThrough" type="PCL:PassThrough" priority="4" bump="0">
-                                    <param name="x.a">-1</param>
-                                    <param name="x.b">1</param>
-                                    <param name="y.a">-1</param>
-                                    <param name="y.b">1</param>
-                                    <param name="z.a">-1</param>
-                                    <param name="z.b">1</param>
+                                    <param name="x.min">-1</param>
+                                    <param name="x.max">1</param>
+                                    <param name="y.min">-1</param>
+                                    <param name="y.max">1</param>
+                                    <param name="z.min">-1</param>
+                                    <param name="z.max">1</param>
                                     <param name="negative_x">0</param>
                                     <param name="negative_y">0</param>
                                     <param name="negative_z">0</param>

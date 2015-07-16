@@ -95,7 +95,8 @@ protected:
 	void transform_xyzshot(Types::HomogMatrix hm_);
 
 	// Property - if true, the component will not transform the input cloud.
-        Base::Property<bool> pass_through;
+    Base::Property<bool> pass_through;
+    Base::Property<bool> inverse;
 
 };
 
