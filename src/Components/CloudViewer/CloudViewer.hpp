@@ -80,19 +80,37 @@ protected:
 	/// Data stream with cloud of XYZ SIFTs.
 	Base::DataStreamIn<pcl::PointCloud<PointXYZSIFT>::Ptr, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_cloud_xyzsift;
 
-	/// Data stream with cloud of XYZ points with normals.
-	Base::DataStreamIn< pcl::PointCloud<pcl::Normal>::Ptr, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_cloud_normals;
-
 	/// Data stream with cloud of XYZRGB points with normals.
 	Base::DataStreamIn< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_cloud_xyzrgb_normals;
 
-	// Handlers
-	void on_cloud_xyz();
-	void on_cloud_xyzrgb();
-	void on_cloud_xyzsift();
-	void on_cloud_normals();
-	void on_cloud_xyzrgb_normals();
-	void on_spin();
+
+	/// Input data stream containing vector of object/model ids.
+	Base::DataStreamIn < std::vector< std::string >, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_om_ids;
+
+	/// Input data stream containing vector of XYZRGB clouds (objects/models).
+	Base::DataStreamIn < std::vector< pcl::PointCloud<pcl::PointXYZRGB>::Ptr >, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_om_clouds_xyzrgb;
+
+	/// Input data stream containing vector of XYZSIFT clouds (objects/models).
+	Base::DataStreamIn < std::vector< pcl::PointCloud<PointXYZSIFT>::Ptr >, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_om_clouds_xyzsift;
+
+
+
+	/// Main handler - displays/hides clouds, coordinate systems, changes properties etc.
+	void refreshViewerState();
+
+
+	/// Display or hide XYZ clouds (scene and objects/models).
+	void displayClouds_xyz();
+
+	/// Display or hide XYZRGB clouds (scene and objects/models).
+	void displayClouds_xyzrgb();
+
+	/// Display or hide XYZSIFT clouds (scene and objects/models).
+	void displayClouds_xyzsift();
+
+	/// Display or hide XYZRGB clouds with normals (scene and objects/models).
+	void displayClouds_xyzrgb_normals();
+
 
 	/// Property: title of the window.
 	Base::Property<std::string> prop_title;
@@ -134,6 +152,15 @@ protected:
 
 	/// Property: size of SIFT points. As default it is set to 1.
 	Base::Property<float> prop_xyzsift_size;
+
+	/// Value indicating how many objects/models names were displayed.
+	unsigned int previous_om_names_number;
+
+	/// Value indicating how many objects/models clouds_xyzrgb were displayed.
+	unsigned int previous_om_clouds_xyzrgb_number;
+
+	/// Value indicating how many objects/models clouds_xyzsift were displayed.
+	unsigned int previous_om_clouds_xyzsift_number;
 
 
 	/// Viewer.
