@@ -118,6 +118,9 @@ protected:
 	/// Property: display/hide coordinate system.
 	Base::Property<bool> prop_coordinate_system;
 
+    /// Property: scale of coordinate system.
+    Base::Property<float> prop_coordinate_system_scale;
+
 	/// Flag indicating whether coordinate system is already displayed or not.
 	bool coordinate_system_status_flag;
 

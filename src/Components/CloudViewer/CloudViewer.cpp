@@ -21,6 +21,7 @@ CloudViewer::CloudViewer(const std::string & name) :
 	Base::Component(name),
 	prop_title("title",std::string("Point Cloud Viewer")),
 	prop_coordinate_system("coordinate_system", true),
+    prop_coordinate_system_scale("coordinate_system_scale", 1.0),
 	prop_background_color("background_color", std::string("0,0,0")),
 	prop_xyz_display("xyz.display", true),
 	prop_xyzrgb_display("xyzrgb.display", true),
@@ -34,6 +35,7 @@ CloudViewer::CloudViewer(const std::string & name) :
 	// General properties.
 	registerProperty(prop_title);
 	registerProperty(prop_coordinate_system);
+    registerProperty(prop_coordinate_system_scale);
 	registerProperty(prop_background_color);
 
 	// XYZ properties.
@@ -369,7 +371,7 @@ void CloudViewer::refreshViewerState() {
 		if (prop_coordinate_system) {
 			// TODO: Currently only 1.7.1/1.7.2 is available in the 012/031/032 laboratories. Fix for other versions of PCL.
 			//#if PCL_VERSION_COMPARE(>=,1,7,1)
-				viewer->addCoordinateSystem ();
+                viewer->addCoordinateSystem (prop_coordinate_system_scale);
 
 			//#endif
 		} else {
