@@ -18,17 +18,21 @@
 		<Subtask name="Processing">
 			<Executor name="Exec1"  period="0.1">
 				<Component name="Source" type="PCL:PCDReader" priority="1" bump="2">
-<!--					<param name="filename">/home/tkornuta/Objects/cereal_box_1_co5_xyzrgb.pcd</param><!---->
-<!--					<param name="filename">/home/tkornuta/discode_ecovi/DCL/Registration/data/2015-05-21/cukier_models/2015-05-27T20:04:04.123836_cukier_pairwise_no_icp_xyzrgb.pcd</param><!---->
-					<param name="filename">/home/tkornuta/discode_ecovi/DCL/Registration/data/2015-05-21/cukier_models/2015-05-27T20:04:15.021918_cukier_pairwise_no_icp_xyzrgb.pcd</param><!---->
+                                        <param name="read_on_init">1</param>
+                                        <param name="filename">/home/mlaszkow/DCL/Registration/data/models/lipton_1/lipton_1_lum_filtered_xyzsift.pcd</param>
+                                        <param name="cloud.xyzsift">1</param>
 				</Component>
 			</Executor>
 		</Subtask>
 		
 		<Subtask name="Visualisation">
 			<Executor name="Exec2" period="0.01">
-				<Component name="Window" type="PCL:CloudViewer" priority="1" bump="0">
-<!--                                    <param name="coordinate_system">false</param>-->
+                                <Component name="Window" type="PCL:CloudViewer" priority="1" bump="0">
+                                        <param name="xyz.display">0</param>
+                                        <param name="xyznormals.display">0</param>
+                                        <param name="xyzrgb.display">0</param>
+                                        <param name="xyzsift.display">1</param>
+                                        <param name="background_color">255,255,255</param>
 				</Component>
 			</Executor>
 		</Subtask>
@@ -37,8 +41,14 @@
 	
 	<!-- pipes connecting datastreams -->
 	<DataStreams>
-		<Source name="Source.out_cloud_xyzrgb">
-			<sink>Window.in_cloud_xyzrgb</sink>
+                <Source name="Source.out_cloud_xyz">
+                        <sink>Window.in_cloud_xyz</sink>
+                </Source>
+                <Source name="Source.out_cloud_xyzrgb">
+                        <sink>Window.in_cloud_xyzrgb</sink>
+                </Source>
+                <Source name="Source.out_cloud_xyzsift">
+                        <sink>Window.in_cloud_xyzsift</sink>
 		</Source>
 	</DataStreams>
 </Task>
