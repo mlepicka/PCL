@@ -85,14 +85,16 @@ protected:
 
 
 	/// Input data stream containing vector of object/model ids.
-	Base::DataStreamIn < std::vector< std::string >, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_om_ids;
+	Base::DataStreamIn <std::vector< std::string>, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_om_ids;
 
 	/// Input data stream containing vector of XYZRGB clouds (objects/models).
-	Base::DataStreamIn < std::vector< pcl::PointCloud<pcl::PointXYZRGB>::Ptr >, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_om_clouds_xyzrgb;
+	Base::DataStreamIn <std::vector< pcl::PointCloud<pcl::PointXYZRGB>::Ptr>, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_om_clouds_xyzrgb;
 
 	/// Input data stream containing vector of XYZSIFT clouds (objects/models).
-	Base::DataStreamIn < std::vector< pcl::PointCloud<PointXYZSIFT>::Ptr >, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_om_clouds_xyzsift;
+	Base::DataStreamIn <std::vector< pcl::PointCloud<PointXYZSIFT>::Ptr>, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_om_clouds_xyzsift;
 
+	/// Input data stream containing vector of model corners (each being a cloud containing 8 XYZ points).
+	Base::DataStreamIn <std::vector< pcl::PointCloud<pcl::PointXYZ>::Ptr>, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex > in_om_corners_xyz;
 
 
 	/// Main handler - displays/hides clouds, coordinate systems, changes properties etc.
@@ -111,6 +113,10 @@ protected:
 	/// Display or hide XYZRGB clouds with normals (scene and objects/models).
 	void displayClouds_xyzrgb_normals();
 
+	/// Displays wireframes (bounding boxes) generated on the basis of xyz cloud containing corners.
+	void displayObjectBoundingBoxesFromCorners_xyz();
+
+
 
 	/// Property: title of the window.
 	Base::Property<std::string> prop_title;
@@ -128,30 +134,37 @@ protected:
 	/// Property: background color. As default it is set to 1 row with 0, 0, 0 (black).
 	Base::Property<std::string> prop_background_color;
 
-    /// Display/hide XYZ cloud.
-    Base::Property<bool> prop_xyz_display;
-
-    /// Display/hide XYZRGB clouds.
-	Base::Property<bool> prop_xyzrgb_display;
-    Base::Property<bool> prop_xyzrgb_display_scene;
-    Base::Property<bool> prop_xyzrgb_display_objects;
-
-
-	/// Display/hide XYZNormals cloud.
-	Base::Property<bool> prop_xyznormals_display;
-
 	/// Property: scale denoting how long the normal vector should be. 
 	Base::Property<float> prop_xyznormals_scale;
 
 	/// Property: level denoting display only every level'th point (default: 1, 100 COUSES ERROR).
 	Base::Property<int> prop_xyznormals_level;
 
+	/// Colours of bounding boxes (r,g,b channels normalized to <0,1>).
+	std::vector<pcl::PointXYZ> bounding_box_colours;
+
+	/// Display/hide XYZ cloud.
+	Base::Property<bool> prop_display_xyz;
+
+	/// Display/hide XYZRGB clouds.
+	Base::Property<bool> prop_display_xyzrgb;
+
+	/// Display/hide XYZNormals cloud.
+	Base::Property<bool> prop_display_xyznormals;
+
+	/// Display/hide XYZSIFT clouds.
+	Base::Property<bool> prop_display_xyzsift;
+
+	/// Display/hide XYZRGB clouds.
+	Base::Property<bool> prop_display_scene;
+
+	/// Display/hide XYZRGB clouds.
+	Base::Property<bool> prop_display_objects;
+
+	/// Display/hide object bounding boxes.
+	Base::Property<bool> prop_display_object_bounding_boxes;
 
 
-    /// Display/hide XYZSIFT clouds.
-	Base::Property<bool> prop_xyzsift_display;
-    Base::Property<bool> prop_xyzsift_display_scene;
-    Base::Property<bool> prop_xyzsift_display_objects;
 
 	/// Property: color of SIFT points. As default it is set to 1 row with 255, 0, 0 (red).
 	Base::Property<std::string> prop_xyzsift_color;
@@ -159,15 +172,18 @@ protected:
 	/// Property: size of SIFT points. As default it is set to 1.
 	Base::Property<float> prop_xyzsift_size;
 
+
 	/// Value indicating how many objects/models names were displayed.
-	unsigned int previous_om_names_number;
+	unsigned int previous_om_names_size;
 
 	/// Value indicating how many objects/models clouds_xyzrgb were displayed.
-	unsigned int previous_om_clouds_xyzrgb_number;
+	unsigned int previous_om_clouds_xyzrgb_size;
 
 	/// Value indicating how many objects/models clouds_xyzsift were displayed.
-	unsigned int previous_om_clouds_xyzsift_number;
+	unsigned int previous_om_clouds_xyzsift_size;
 
+	/// Value indicating how many objects/models wireframes (from corners) were displayed.
+	unsigned int previous_om_object_bounding_boxes_xyz_size;
 
 	/// Viewer.
 	pcl::visualization::PCLVisualizer * viewer;
