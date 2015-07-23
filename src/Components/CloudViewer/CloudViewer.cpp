@@ -171,6 +171,7 @@ void CloudViewer::refreshViewerState() {
 	}
 
 	// TODO: check sizes of om names/clouds!!!
+	// Check whether object names changed - if so, reload all objects, if not - leave unchanged... what about object poses?
 
 
 	// Displays xyz cloud.
@@ -187,6 +188,10 @@ void CloudViewer::refreshViewerState() {
 
 	// Displays wireframes (bounding boxes) generated on the basis of xyz cloud containing corners.
 	displayObjectBoundingBoxesFromCorners_xyz();
+
+	// At the end - add names of objects.
+	// bool addText3D (const std::string &text, const PointT &position, double textScale=1.0, double r=1.0, double g=1.0, double b=1.0, const std::string &id="", int viewport=0);
+	// bool removeText3D (const std::string & id = "cloud",int  	viewport = 0 );
 
 	// Refresh viewer.
 	viewer->spinOnce(100);
