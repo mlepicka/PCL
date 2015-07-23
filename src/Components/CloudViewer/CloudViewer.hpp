@@ -128,12 +128,13 @@ protected:
 	/// Property: background color. As default it is set to 1 row with 0, 0, 0 (black).
 	Base::Property<std::string> prop_background_color;
 
-	/// Display/hide XYZ cloud.
-	Base::Property<bool> prop_xyz_display;
+    /// Display/hide XYZ cloud.
+    Base::Property<bool> prop_xyz_display;
 
-	/// Display/hide XYZRGB cloud.
+    /// Display/hide XYZRGB clouds.
 	Base::Property<bool> prop_xyzrgb_display;
-
+    Base::Property<bool> prop_xyzrgb_display_scene;
+    Base::Property<bool> prop_xyzrgb_display_objects;
 
 
 	/// Display/hide XYZNormals cloud.
@@ -147,8 +148,10 @@ protected:
 
 
 
-	/// Display/hide XYZSIFT cloud.
+    /// Display/hide XYZSIFT clouds.
 	Base::Property<bool> prop_xyzsift_display;
+    Base::Property<bool> prop_xyzsift_display_scene;
+    Base::Property<bool> prop_xyzsift_display_objects;
 
 	/// Property: color of SIFT points. As default it is set to 1 row with 255, 0, 0 (red).
 	Base::Property<std::string> prop_xyzsift_color;

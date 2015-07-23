@@ -23,12 +23,16 @@ CloudViewer::CloudViewer(const std::string & name) :
 	prop_coordinate_system("coordinate_system", true),
     prop_coordinate_system_scale("coordinate_system_scale", 1.0),
 	prop_background_color("background_color", std::string("0,0,0")),
-	prop_xyz_display("xyz.display", true),
+    prop_xyz_display("xyz.display", true),
 	prop_xyzrgb_display("xyzrgb.display", true),
+    prop_xyzrgb_display_scene("xyzrgb.scene.display", true),
+    prop_xyzrgb_display_objects("xyzrgb.objects.display", true),
 	prop_xyznormals_display("xyznormals.display", true),
 	prop_xyznormals_scale("xyznormals.scale", 0.1),
 	prop_xyznormals_level("xyznormals.level", 1),
 	prop_xyzsift_display("xyzsift.display", true),
+    prop_xyzsift_display_scene("xyzsift.scene.display", true),
+    prop_xyzsift_display_objects("xyzsift.objects.display", true),
 	prop_xyzsift_size("xyzsift.size", 1),
 	prop_xyzsift_color("xyzsift.color", std::string("255,0,0"))
 {
@@ -43,6 +47,8 @@ CloudViewer::CloudViewer(const std::string & name) :
 
 	// XYZRGB properties.
 	registerProperty(prop_xyzrgb_display);
+    registerProperty(prop_xyzrgb_display_scene);
+    registerProperty(prop_xyzrgb_display_objects);
 
 	// XYZNormals properties.
 	registerProperty(prop_xyznormals_display);
@@ -51,6 +57,8 @@ CloudViewer::CloudViewer(const std::string & name) :
 
 	// XYZSIFT properties.
 	registerProperty(prop_xyzsift_display);
+    registerProperty(prop_xyzsift_display_scene);
+    registerProperty(prop_xyzsift_display_objects);
 	registerProperty(prop_xyzsift_size);
 	registerProperty(prop_xyzsift_color);
 
@@ -177,8 +185,11 @@ void CloudViewer::displayClouds_xyzrgb() {
 
 	} else {
 
-		// Update scene cloud.
-		if (!in_cloud_xyzrgb.empty()){
+        // Update scene cloud.
+        if(!prop_xyzrgb_display_scene){
+            viewer->removePointCloud ("xyzrgb");
+        }
+        else if (!in_cloud_xyzrgb.empty()){
 			// Read cloud from port.
 			pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = in_cloud_xyzrgb.read();
 
@@ -214,21 +225,24 @@ void CloudViewer::displayClouds_xyzrgb() {
 				// Remove object/model cloud.
 				viewer->removePointCloud (cname);
 			}//: for
+            if(prop_xyzrgb_display_objects){
+                for(int i=0; i< om_clouds.size(); i++) {
+                    // Generate cloud name.
+                    std::ostringstream s;
+                    s << i;
+                    std::string cname = "xyzrgb" + s.str();
 
-			for(int i=0; i< om_clouds.size(); i++) {
-				// Generate cloud name.
-				std::ostringstream s;
-				s << i;
-				std::string cname = "xyzrgb" + s.str();
+                    // Colour field hanlder.
+                    pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> color_distribution(om_clouds[i]);
 
-				// Colour field hanlder.
-				pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> color_distribution(om_clouds[i]);
+                    // Add object/model cloud.
+                    viewer->addPointCloud<pcl::PointXYZRGB> (om_clouds[i], color_distribution, cname);
+                }//: for
 
-				// Add object/model cloud.
-				viewer->addPointCloud<pcl::PointXYZRGB> (om_clouds[i], color_distribution, cname);
-			}//: for
-
-			previous_om_clouds_xyzrgb_number = om_clouds.size();
+                previous_om_clouds_xyzrgb_number = om_clouds.size();
+            }else{
+                previous_om_clouds_xyzrgb_number = 0;
+            }
 		}//: if
 
 	}//: else
@@ -255,8 +269,11 @@ void CloudViewer::displayClouds_xyzsift() {
 		double r=255, g=0, b=0;
 		parseColor(prop_xyzsift_color, r, g, b);
 
-		// Update scene cloud.
-		if (!in_cloud_xyzsift.empty()){
+        // Update scene cloud.
+        if(!prop_xyzsift_display_scene){
+            viewer->removePointCloud ("xyzsift");
+        }
+        else if (!in_cloud_xyzsift.empty()){
 			// Read cloud from port.
 			pcl::PointCloud<PointXYZSIFT>::Ptr cloud = in_cloud_xyzsift.read();
 
@@ -296,25 +313,28 @@ void CloudViewer::displayClouds_xyzsift() {
 				std::string cname = "xyzsift" + s.str();
 				viewer->removePointCloud (cname);
 			}//: for
+            if(prop_xyzsift_display_objects){
+                for(int i=0; i< om_clouds.size(); i++) {
+                    // Generate cloud name.
+                    std::ostringstream s;
+                    s << i;
+                    std::string cname = "xyzsift" + s.str();
 
-			for(int i=0; i< om_clouds.size(); i++) {
-				// Generate cloud name.
-				std::ostringstream s;
-				s << i;
-				std::string cname = "xyzsift" + s.str();
+                    // Transform to XYZ cloud.
+                    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_xyz(new pcl::PointCloud<pcl::PointXYZ>);
+                    pcl::copyPointCloud(*(om_clouds[i]), *cloud_xyz);
 
-				// Transform to XYZ cloud.
-				pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_xyz(new pcl::PointCloud<pcl::PointXYZ>);
-				pcl::copyPointCloud(*(om_clouds[i]), *cloud_xyz);
+                    viewer->addPointCloud<pcl::PointXYZ> (cloud_xyz, cname);
 
-				viewer->addPointCloud<pcl::PointXYZ> (cloud_xyz, cname);
+                    // Update SIFT cloud properties.
+                    viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, prop_xyzsift_size, cname);
+                    viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, r, g, b, cname);
+                }//: for
+                previous_om_clouds_xyzsift_number = om_clouds.size();
+            }else{
+                previous_om_clouds_xyzsift_number = 0;
+            }
 
-				// Update SIFT cloud properties.
-				viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, prop_xyzsift_size, cname);
-				viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, r, g, b, cname);
-			}//: for
-
-			previous_om_clouds_xyzsift_number = om_clouds.size();
 		}//: if
 
 
