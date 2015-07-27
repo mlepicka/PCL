@@ -10,8 +10,8 @@
 #include "CloudViewer.hpp"
 #include "Common/Logger.hpp"
 
+#include <algorithm>
 #include <boost/bind.hpp>
-
 #include <pcl/filters/filter.h>
 
 namespace Processors {
@@ -33,7 +33,8 @@ CloudViewer::CloudViewer(const std::string & name) :
 	prop_display_xyznormals("xyznormals.display", true),
 	prop_display_scene("display.scene", true),
 	prop_display_objects("display.objects", true),
-	prop_display_object_bounding_boxes("display.object_bounding_boxes",true)
+	prop_display_object_bounding_boxes("display.object_bounding_boxes",true),
+	prop_display_models_scene_correspondences("display.models_scene_correspondences",true)
 {
 	// General properties.
 	registerProperty(prop_title);
@@ -49,6 +50,7 @@ CloudViewer::CloudViewer(const std::string & name) :
 	registerProperty(prop_display_xyzsift);
 	registerProperty(prop_display_xyznormals);
 	registerProperty(prop_display_object_bounding_boxes);
+	registerProperty(prop_display_models_scene_correspondences);
 
 	// XYZNormals properties.
 	registerProperty(prop_xyznormals_scale);
@@ -107,6 +109,9 @@ void CloudViewer::prepareInterface() {
 	registerStream("in_om_clouds_xyzsift", &in_om_clouds_xyzsift);
 	registerStream("in_om_corners_xyz", &in_om_corners_xyz);
 
+	// Register cloud object/model correspondences streams.
+	registerStream("in_models_scene_correspondences", &in_models_scene_correspondences);
+
 	registerHandler("on_spin", boost::bind(&CloudViewer::refreshViewerState, this));
 	addDependency("on_spin", NULL);
 }
@@ -122,10 +127,11 @@ bool CloudViewer::onInit() {
 
 	// Init variables.
 	coordinate_system_status_flag = !prop_coordinate_system;
-	previous_om_names_size = 0;
-	previous_om_clouds_xyzrgb_size= 0;
-	previous_om_clouds_xyzsift_size = 0;
-	previous_om_object_bounding_boxes_xyz_size = 0;
+
+	previous_om_xyzrgb_size = 0;
+	previous_om_xyzsift_size = 0;
+	previous_om_bb_size = 0;
+	previous_ms_correspondences_size = 0;
 
 	return true;
 }
@@ -173,238 +179,364 @@ void CloudViewer::refreshViewerState() {
 	// TODO: check sizes of om names/clouds!!!
 	// Check whether object names changed - if so, reload all objects, if not - leave unchanged... what about object poses?
 
+/*	bool refresh_scene_xyzrgb = false;
+	bool refresh_scene_xyzsift = false;*/
+	bool refresh_om_xyzrgb = false;
+	bool refresh_om_xyzsift = false;
+	bool refresh_om_bb = false;
+	bool refresh_correspondences = false;
 
-	// Displays xyz cloud.
-	displayClouds_xyz();
+	// Temporary variables - scene clouds.
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr scene_cloud_xyzrgb;
+	pcl::PointCloud<PointXYZSIFT>::Ptr scene_cloud_xyzsift;
 
-	// Displays xyz cloud.
-	displayClouds_xyzrgb();
+	// Temporary variables - object/models SIFT clouds.
+	std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> om_clouds_xyzrgb;
+	std::vector<pcl::PointCloud<PointXYZSIFT>::Ptr> om_clouds_xyzsift;
+	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> om_corners_xyz;
 
-	// Displays xyz cloud.
-	displayClouds_xyzsift();
+	// Temporary variables - correspondences.
+	std::vector<pcl::CorrespondencesPtr> models_scene_correspondences;
 
-	// Displays xyzrgb with normals cloud.
-	displayClouds_xyzrgb_normals();
+	// Check scene xyzrgb cloud.
+	if (!in_cloud_xyzrgb.empty()){
+		scene_cloud_xyzrgb = in_cloud_xyzrgb.read();
+		refresh_correspondences = true;
+		refreshSceneCloudXYZRGB(scene_cloud_xyzrgb);
+	}//: if
 
-	// Displays wireframes (bounding boxes) generated on the basis of xyz cloud containing corners.
-	displayObjectBoundingBoxesFromCorners_xyz();
 
-	// At the end - add names of objects.
-	// bool addText3D (const std::string &text, const PointT &position, double textScale=1.0, double r=1.0, double g=1.0, double b=1.0, const std::string &id="", int viewport=0);
-	// bool removeText3D (const std::string & id = "cloud",int  	viewport = 0 );
+	// Check scene xyzsift cloud.
+	if (!in_cloud_xyzsift.empty()){
+		scene_cloud_xyzsift = in_cloud_xyzsift.read();
+		refresh_correspondences = true;
+		refreshSceneCloudXYZSIFT(scene_cloud_xyzsift);
+	}//: if
+
+
+	// Read om XYZRGB clouds from port.
+	if (!in_om_clouds_xyzrgb.empty()){
+			om_clouds_xyzrgb = in_om_clouds_xyzrgb.read();
+			refreshOMCloudsXYZRGB(om_clouds_xyzrgb);
+			refresh_om_xyzrgb = true;
+			refresh_correspondences = true;
+	}//: if
+
+	// Read om XYZSIFT clouds from port.
+	if (!in_om_clouds_xyzsift.empty()){
+			om_clouds_xyzsift = in_om_clouds_xyzsift.read();
+			refresh_om_xyzsift = true;
+			refresh_correspondences = true;
+	}//: if
+
+	// Read om bounding boxes from port.
+	if (!in_om_corners_xyz.empty()){
+			om_corners_xyz = in_om_corners_xyz.read();
+			refresh_om_bb = true;
+	}//: if
+
+	// Read models-scene correspondences from port.
+	if (!in_models_scene_correspondences.empty()){
+			models_scene_correspondences = in_models_scene_correspondences.read();
+			refresh_correspondences = true;
+	}//: if
+
+	// Generate colour vector for MAX of om clouds (sifts, corners, correspondences).
+	if( refresh_om_xyzsift || refresh_om_bb)
+		generateColours(max(om_clouds_xyzsift.size(),om_corners_xyz.size()));
+
+	// Refresh om clouds.
+	if (refresh_om_xyzsift)
+		refreshOMCloudsXYZSIFT(om_clouds_xyzsift);
+
+	// Refresh bounding boxes.
+	if (refresh_om_bb)
+		refreshOMBoundingBoxesFromCorners(om_corners_xyz);
+
+
+	// Refresh correspondences.
+	if (refresh_correspondences)
+		refreshCorrespondences(models_scene_correspondences, scene_cloud_xyzsift, om_clouds_xyzsift);
+
+
+	// Remember previous size.
+	if(!prop_display_objects) {
+		previous_om_xyzrgb_size = 0;
+		previous_om_xyzsift_size = 0;
+	} else {
+		if (refresh_om_xyzrgb)
+			previous_om_xyzrgb_size = om_clouds_xyzrgb.size();
+		if (refresh_om_xyzsift)
+			previous_om_xyzsift_size = om_clouds_xyzsift.size();
+	}//: else
+
+	if(!prop_display_object_bounding_boxes)
+		previous_om_bb_size = 0;
+	else
+		if (refresh_om_bb)
+			previous_om_bb_size = om_corners_xyz.size();
+
+
+	if(!prop_display_models_scene_correspondences)
+		previous_om_bb_size = 0;
+	else
+		if (refresh_correspondences)
+			previous_ms_correspondences_size = models_scene_correspondences.size();
+
 
 	// Refresh viewer.
 	viewer->spinOnce(100);
 }
 
 
+void CloudViewer::refreshSceneCloudXYZRGB(pcl::PointCloud<pcl::PointXYZRGB>::Ptr scene_cloud_xyzrgb_){
+	CLOG(LTRACE) << "refreshSceneCloudXYZRGB";
 
-
-void CloudViewer::displayClouds_xyz() {
-	CLOG(LTRACE) << "displayClouds_xyz";
-
-	if (!prop_display_xyz) {
-		viewer->removePointCloud ("xyz");
+	if ((!prop_display_scene)||(!prop_display_xyzrgb)) {
+		viewer->removePointCloud ("scene_xyzrgb");
 	} else {
+		// Filter the NaN points.
+		std::vector<int> indices;
+		pcl::PointCloud<pcl::PointXYZRGB>::Ptr tmp_cloud_xyzrgb(new pcl::PointCloud<pcl::PointXYZRGB>);;
+		pcl::removeNaNFromPointCloud(*scene_cloud_xyzrgb_, *tmp_cloud_xyzrgb, indices);
+		tmp_cloud_xyzrgb->is_dense = false;
 
-		// If empty cloud - do nothing.
-		if (in_cloud_xyz.empty())
-			return;
+		// Colour field hanlder.
+		pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> color_distribution(tmp_cloud_xyzrgb);
 
-		// Read cloud from port.
-		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud = in_cloud_xyz.read();
-
-		// UPDATE: Display XYZ cloud if required.
-		if (!viewer->updatePointCloud<pcl::PointXYZ> (cloud,"xyz"))
-			viewer->addPointCloud<pcl::PointXYZ> (cloud,"xyz");
-
-		// TODO: objects?
-
+		// UPDATE: Display cloud only if required.
+		if (!viewer->updatePointCloud<pcl::PointXYZRGB> (tmp_cloud_xyzrgb, color_distribution, "scene_xyzrgb"))
+			viewer->addPointCloud<pcl::PointXYZRGB> (tmp_cloud_xyzrgb, color_distribution, "scene_xyzrgb");
 	}//: else
-
 }
 
-void CloudViewer::displayClouds_xyzrgb() {
-	CLOG(LTRACE) << "displayClouds_xyzrgb";
 
-	if (!prop_display_xyzrgb) {
-		viewer->removePointCloud ("xyzrgb");
+void CloudViewer::refreshSceneCloudXYZSIFT(pcl::PointCloud<PointXYZSIFT>::Ptr scene_cloud_xyzsift_){
+	CLOG(LTRACE) << "refreshSceneCloudXYZSIFT";
 
-		// Remove object clouds
-		for(int i=0; i< previous_om_clouds_xyzrgb_size; i++) {
-			// cloud name.
-			std::ostringstream s;
-			s << i;
-			std::string cname = "xyzrgb" + s.str();
-			viewer->removePointCloud (cname);
-		}//: for
-
+	if ((!prop_display_scene)||(!prop_display_xyzsift)) {
+		viewer->removePointCloud ("scene_xyzsift");
 	} else {
+		// Transform to XYZ cloud.
+		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_xyz(new pcl::PointCloud<pcl::PointXYZ>);
+		pcl::copyPointCloud(*scene_cloud_xyzsift_, *cloud_xyz);
 
-        // Update scene cloud.
-		if(!prop_display_scene){
-            viewer->removePointCloud ("xyzrgb");
-        }
-        else if (!in_cloud_xyzrgb.empty()){
-			// Read cloud from port.
-			pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = in_cloud_xyzrgb.read();
+		// Filter the NaN points.
+		std::vector<int> indices;
+		pcl::removeNaNFromPointCloud(*cloud_xyz, *cloud_xyz, indices);
+		cloud_xyz->is_dense = false;
 
-			// Filter the NaN points.
-			std::vector<int> indices;
-			cloud->is_dense = false;
-			pcl::removeNaNFromPointCloud(*cloud, *cloud, indices);
+		// UPDATE: Display cloud only if required.
+		if (!viewer->updatePointCloud<pcl::PointXYZ> (cloud_xyz, "scene_xyzsift"))
+			viewer->addPointCloud<pcl::PointXYZ> (cloud_xyz, "scene_xyzsift");
 
-			// Colour field hanlder.
-			pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> color_distribution(cloud);
-
-			// UPDATE: Display cloud only if required.
-			if (!viewer->updatePointCloud<pcl::PointXYZRGB> (cloud, color_distribution, "xyzrgb"))
-				viewer->addPointCloud<pcl::PointXYZRGB> (cloud, color_distribution, "xyzrgb");
-		}//: if cloud empty
-
-
-		// Update object/models clouds.
-		if (!in_om_clouds_xyzrgb.empty()){
-
-			// Read clouds from port.
-			std::vector< pcl::PointCloud<pcl::PointXYZRGB>::Ptr > om_clouds = in_om_clouds_xyzrgb.read();
-
-			// 3 cases: in_om_clouds_xyzrgb.size < || > || == displayed_om_number
-			// Instead remove all previous and add new - not optimal solution - but those are small clouds!
-
-			// Remove object clouds.
-			for(int i=0; i< previous_om_clouds_xyzrgb_size; i++) {
-				// Generate cloud name.
-				std::ostringstream s;
-				s << i;
-				std::string cname = "xyzrgb" + s.str();
-				// Remove object/model cloud.
-				viewer->removePointCloud (cname);
-			}//: for
-			if(prop_display_objects){
-                for(int i=0; i< om_clouds.size(); i++) {
-                    // Generate cloud name.
-                    std::ostringstream s;
-                    s << i;
-                    std::string cname = "xyzrgb" + s.str();
-
-                    // Colour field hanlder.
-                    pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> color_distribution(om_clouds[i]);
-
-                    // Add object/model cloud.
-                    viewer->addPointCloud<pcl::PointXYZRGB> (om_clouds[i], color_distribution, cname);
-                }//: for
-
-				previous_om_clouds_xyzrgb_size = om_clouds.size();
-            }else{
-				previous_om_clouds_xyzrgb_size = 0;
-            }
-		}//: if
-
-	}//: else
-
-}
-
-void CloudViewer::displayClouds_xyzsift() {
-	CLOG(LTRACE) << "displayClouds_xyzsift";
-
-	if (!prop_display_xyzsift) {
-		viewer->removePointCloud ("xyzsift");
-
-		// Remove object clouds
-		for(int i=0; i< previous_om_clouds_xyzsift_size; i++) {
-			// cloud name.
-			std::ostringstream s;
-			s << i;
-			std::string cname = "xyzsift" + s.str();
-			viewer->removePointCloud (cname);
-		}//: for
-
-	} else {
 		// Set SIFT colours.
 		double r=255, g=0, b=0;
 		parseColor(prop_xyzsift_color, r, g, b);
 
-        // Update scene cloud.
-		if(!prop_display_scene){
-            viewer->removePointCloud ("xyzsift");
-        }
-        else if (!in_cloud_xyzsift.empty()){
-			// Read cloud from port.
-			pcl::PointCloud<PointXYZSIFT>::Ptr cloud = in_cloud_xyzsift.read();
-
-			// Filter the NaN points.
-			std::vector<int> indices;
-			cloud->is_dense = false;
-			pcl::removeNaNFromPointCloud(*cloud, *cloud, indices);
-
-			// Transform to XYZ cloud.
-			pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_xyz(new pcl::PointCloud<pcl::PointXYZ>);
-			pcl::copyPointCloud(*cloud, *cloud_xyz);
-
-			// UPDATE: Display cloud only if required.
-			if (!viewer->updatePointCloud<pcl::PointXYZ> (cloud_xyz, "xyzsift"))
-				viewer->addPointCloud<pcl::PointXYZ> (cloud_xyz, "xyzsift");
-
-			// Update SIFT cloud properties.
-			viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, prop_xyzsift_size,"xyzsift");
-			viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, r, g, b, "xyzsift");
-		}//: if cloud empty
-
-
-		// Update object/models clouds.
-		if (!in_om_clouds_xyzsift.empty()){
-
-			// Read clouds from port.
-			std::vector< pcl::PointCloud<PointXYZSIFT>::Ptr > om_clouds = in_om_clouds_xyzsift.read();
-
-			// 3 cases: in_om_clouds_xyzsift.size < || > || == displayed_om_number
-			// Instead remove all previous and add new - not optimal solution - but those are small clouds!
-
-			// Remove object clouds.
-			for(int i=0; i< previous_om_clouds_xyzsift_size; i++) {
-				// Generate cloud name.
-				std::ostringstream s;
-				s << i;
-				std::string cname = "xyzsift" + s.str();
-				viewer->removePointCloud (cname);
-			}//: for
-			if(prop_display_objects){
-                for(int i=0; i< om_clouds.size(); i++) {
-                    // Generate cloud name.
-                    std::ostringstream s;
-                    s << i;
-                    std::string cname = "xyzsift" + s.str();
-
-                    // Transform to XYZ cloud.
-                    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_xyz(new pcl::PointCloud<pcl::PointXYZ>);
-                    pcl::copyPointCloud(*(om_clouds[i]), *cloud_xyz);
-
-                    viewer->addPointCloud<pcl::PointXYZ> (cloud_xyz, cname);
-
-                    // Update SIFT cloud properties.
-                    viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, prop_xyzsift_size, cname);
-                    viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, r, g, b, cname);
-                }//: for
-				previous_om_clouds_xyzsift_size = om_clouds.size();
-            }else{
-				previous_om_clouds_xyzsift_size = 0;
-            }
-
-		}//: if
-
-
-
+		// Update SIFT cloud properties.
+		viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, prop_xyzsift_size,"scene_xyzsift");
+		viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, r, g, b, "scene_xyzsift");
 	}//: else
 }
 
+
+void CloudViewer::refreshOMCloudsXYZRGB(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> om_clouds_xyzrgb_) {
+	CLOG(LTRACE) << "refreshOMCloudsXYZRGB";
+
+	if ((!prop_display_xyzrgb)||(!prop_display_objects)) {
+		// Remove object clouds
+		for(int i=0; i< previous_om_xyzrgb_size; i++) {
+			// cloud name.
+			std::ostringstream s;
+			s << i;
+			std::string cname = "xyzrgb_" + s.str();
+			viewer->removePointCloud (cname);
+		}//: for
+
+	} else {
+		// Update object clouds that need to be updated.
+		for(int i=0; i< om_clouds_xyzrgb_.size(); i++) {
+			// Generate cloud name.
+			std::ostringstream s;
+			s << i;
+			std::string cname = "xyzrgb_" + s.str();
+
+			// Filter the NaN points.
+			std::vector<int> indices;
+			pcl::PointCloud<pcl::PointXYZRGB>::Ptr tmp_cloud_xyzrgb(new pcl::PointCloud<pcl::PointXYZRGB>);;
+			pcl::removeNaNFromPointCloud(*(om_clouds_xyzrgb_[i]), *tmp_cloud_xyzrgb, indices);
+			tmp_cloud_xyzrgb->is_dense = false;
+
+			// Colour field hanlder.
+			pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> color_distribution(tmp_cloud_xyzrgb);
+
+			// UPDATE: Display cloud only if required.
+			if (!viewer->updatePointCloud<pcl::PointXYZRGB> (tmp_cloud_xyzrgb, color_distribution, cname))
+				viewer->addPointCloud<pcl::PointXYZRGB> (tmp_cloud_xyzrgb, color_distribution, cname);
+		}//: for
+
+		// Remove unnecessary object clouds.
+		for(int i=om_clouds_xyzrgb_.size(); i< previous_om_xyzrgb_size; i++) {
+			// Generate cloud name.
+			std::ostringstream s;
+			s << i;
+			std::string cname = "xyzrgb_" + s.str();
+			// Remove object/model cloud.
+			viewer->removePointCloud (cname);
+		}//: for
+
+	}//: else
+
+}
+
+
+void CloudViewer::refreshOMCloudsXYZSIFT(std::vector<pcl::PointCloud<PointXYZSIFT>::Ptr> om_clouds_xyzsift_) {
+	CLOG(LTRACE) << "refreshOMCloudsXYZSIFT";
+
+	if ((!prop_display_xyzsift)||(!prop_display_objects)) {
+		// Remove object clouds
+		for(int i=0; i< previous_om_xyzsift_size; i++) {
+			// cloud name.
+			std::ostringstream s;
+			s << i;
+			std::string cname = "xyzsift_" + s.str();
+			viewer->removePointCloud (cname);
+		}//: for
+
+	} else {
+		// Update object clouds that need to be updated.
+		for(int i=0; i< om_clouds_xyzsift_.size(); i++) {
+			// Generate cloud name.
+			std::ostringstream s;
+			s << i;
+			std::string cname = "xyzsift_" + s.str();
+
+			// Transform to XYZ cloud.
+			pcl::PointCloud<pcl::PointXYZ>::Ptr tmp_cloud_xyz(new pcl::PointCloud<pcl::PointXYZ>);
+			pcl::copyPointCloud(*(om_clouds_xyzsift_[i]), *tmp_cloud_xyz);
+
+			// Filter the NaN points.
+			std::vector<int> indices;
+			pcl::removeNaNFromPointCloud(*tmp_cloud_xyz, *tmp_cloud_xyz, indices);
+			tmp_cloud_xyz->is_dense = false;
+
+			// UPDATE: Display cloud only if required.
+			if (!viewer->updatePointCloud<pcl::PointXYZ> (tmp_cloud_xyz, cname))
+				viewer->addPointCloud<pcl::PointXYZ> (tmp_cloud_xyz, cname);
+
+			// Set SIFT colours.
+			double r= colours[i].x;
+			double g= colours[i].y;
+			double b= colours[i].z;
+
+			// Update SIFT cloud properties.
+			viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, prop_xyzsift_size, cname);
+			viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, r, g, b, cname);
+
+		}//: for
+
+		// Remove unnecessary object clouds.
+		for(int i=om_clouds_xyzsift_.size(); i< previous_om_xyzsift_size; i++) {
+			// Generate cloud name.
+			std::ostringstream s;
+			s << i;
+			std::string cname = "xyzsift_" + s.str();
+			// Remove object/model cloud.
+			viewer->removePointCloud (cname);
+		}//: for
+
+	}//: else
+
+}
+
+
+void CloudViewer::refreshOMBoundingBoxesFromCorners(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>  om_corners_xyz_) {
+	CLOG(LTRACE) << "refreshOMBoundingBoxesFromCorners";
+
+	// Remove bounding boxes objects - performed always! TODO FIX!
+	for(int i=0; i< previous_om_bb_size; i++) {
+		// Generate given object BB name prefix.
+		std::ostringstream s;
+		s << i;
+		std::string cname = "bounding_line_" + s.str()+"_";
+		// Remove lines one by one.
+		viewer->removeShape(cname + std::string("01"));
+		viewer->removeShape(cname + std::string("12"));
+		viewer->removeShape(cname + std::string("23"));
+		viewer->removeShape(cname + std::string("30"));
+		viewer->removeShape(cname + std::string("04"));
+		viewer->removeShape(cname + std::string("15"));
+		viewer->removeShape(cname + std::string("26"));
+		viewer->removeShape(cname + std::string("37"));
+		viewer->removeShape(cname + std::string("45"));
+		viewer->removeShape(cname + std::string("56"));
+		viewer->removeShape(cname + std::string("67"));
+		viewer->removeShape(cname + std::string("74"));
+	}//: for
+
+	if (prop_display_object_bounding_boxes) {
+
+		for(int i=0; i< om_corners_xyz_.size(); i++) {
+			// Generate given object BB name prefix.
+			std::ostringstream s;
+			s << i;
+			std::string cname = "bounding_line_" + s.str()+"_";
+			// Get colour from list.
+			double r = colours[i].x;
+			double g = colours[i].y;
+			double b = colours[i].z;
+
+			// Remove lines one by one.
+			viewer->addLine(om_corners_xyz_[i]->at(0), om_corners_xyz_[i]->at(1), r, g, b, cname + std::string("01"));
+			viewer->addLine(om_corners_xyz_[i]->at(1), om_corners_xyz_[i]->at(2), r, g, b, cname + std::string("12"));
+			viewer->addLine(om_corners_xyz_[i]->at(2), om_corners_xyz_[i]->at(3), r, g, b, cname + std::string("23"));
+			viewer->addLine(om_corners_xyz_[i]->at(3), om_corners_xyz_[i]->at(0), r, g, b, cname + std::string("30"));
+			viewer->addLine(om_corners_xyz_[i]->at(0), om_corners_xyz_[i]->at(4), r, g, b, cname + std::string("04"));
+			viewer->addLine(om_corners_xyz_[i]->at(1), om_corners_xyz_[i]->at(5), r, g, b, cname + std::string("15"));
+			viewer->addLine(om_corners_xyz_[i]->at(2), om_corners_xyz_[i]->at(6), r, g, b, cname + std::string("26"));
+			viewer->addLine(om_corners_xyz_[i]->at(3), om_corners_xyz_[i]->at(7), r, g, b, cname + std::string("37"));
+			viewer->addLine(om_corners_xyz_[i]->at(4), om_corners_xyz_[i]->at(5), r, g, b, cname + std::string("45"));
+			viewer->addLine(om_corners_xyz_[i]->at(5), om_corners_xyz_[i]->at(6), r, g, b, cname + std::string("56"));
+			viewer->addLine(om_corners_xyz_[i]->at(6), om_corners_xyz_[i]->at(7), r, g, b, cname + std::string("67"));
+			viewer->addLine(om_corners_xyz_[i]->at(7), om_corners_xyz_[i]->at(4), r, g, b, cname + std::string("74"));
+		}//: for
+
+	}//: if
+
+}
+
+
+void CloudViewer::generateColours(unsigned int size_) {
+	CLOG(LTRACE) << "generateColours";
+
+	CLOG(LDEBUG) << "at start: max size_ =" << size_ << "colours.size() =" << colours.size();
+	// If too small.
+	while (colours.size() < size_) {
+		// Add random colour.
+		pcl::PointXYZ rgb ((double)(rand()&255)/255.0, (double)(rand()&255)/255.0, (double)(rand()&255)/255.0);
+		colours.push_back(rgb);
+	}//: while
+	// If too big.
+	while (colours.size() > size_) {
+		// Remove last colour from list.
+		colours.pop_back();
+	}//: while
+	CLOG(LDEBUG) << "at end: max size_ =" << size_ << "colours.size() =" << colours.size();
+}
+
+
+
+
+
+/*
 
 void CloudViewer::displayClouds_xyzrgb_normals() {
 	CLOG(LTRACE) << "displayClouds_xyzrgb_normals";
 
 	if (!prop_display_xyznormals) {
-/*		viewer->removePointCloud ("xyzrgb");
-		viewer->removePointCloud ("xyzrgbnormals");*/
+		viewer->removePointCloud ("xyzrgb");
+		viewer->removePointCloud ("xyzrgbnormals");
 	} else {
 
 		// If empty cloud - do nothing.
@@ -421,90 +553,50 @@ void CloudViewer::displayClouds_xyzrgb_normals() {
 		pcl::copyPointCloud(*cloud, *normals);
 
 		// TODO: optimize! why remove all points and shapes, why RBGXYZ points are displayed separately?
-		viewer->removeAllPointClouds();
-		viewer->removeAllShapes();
+		//viewer->removeAllPointClouds();
+		//viewer->removeAllShapes();
 
 		pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(cloudRgb);
 		viewer->addPointCloud<pcl::PointXYZRGB>(cloudRgb, rgb, "xyzrgb");
 		viewer->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal>(cloudRgb, normals, prop_xyznormals_level, prop_xyznormals_scale, "xyzrgbnormals");
 	}//: else
 }
+*/
 
 
+void CloudViewer::refreshCorrespondences(std::vector<pcl::CorrespondencesPtr> models_scene_correspondences_, pcl::PointCloud<PointXYZSIFT>::Ptr scene_cloud_xyzsift_, std::vector<pcl::PointCloud<PointXYZSIFT>::Ptr> om_clouds_xyzsift_) {
+	CLOG(LTRACE) << "refreshCorrespondences";
 
-void CloudViewer::displayObjectBoundingBoxesFromCorners_xyz() {
-	CLOG(LTRACE) << "displayObjectBoundingBoxesFromCorners_xyz";
-
-	// Remove bounding boxes objects - performed always!
-	for(int i=0; i< previous_om_object_bounding_boxes_xyz_size; i++) {
-		// Generate given object BB name prefix.
-		std::ostringstream s;
+	// Remove correspondences - TODO FIX.
+	for(int i = 0; i < previous_ms_correspondences_size; i++){
+		ostringstream s;
 		s << i;
-		std::string cname = "bounding_line" + s.str();
-		// Remove lines one by one.
-		viewer->removeShape(cname + std::string("01"));
-		viewer->removeShape(cname + std::string("12"));
-		viewer->removeShape(cname + std::string("23"));
-		viewer->removeShape(cname + std::string("30"));
-		viewer->removeShape(cname + std::string("04"));
-		viewer->removeShape(cname + std::string("15"));
-		viewer->removeShape(cname + std::string("26"));
-		viewer->removeShape(cname + std::string("37"));
-		viewer->removeShape(cname + std::string("45"));
-		viewer->removeShape(cname + std::string("56"));
-		viewer->removeShape(cname + std::string("67"));
-		viewer->removeShape(cname + std::string("74"));
-	}//: for
+		std::string cname = "correspondences_" + s.str();
 
-	if ((prop_display_object_bounding_boxes) && (!in_om_corners_xyz.empty())) {
-
-		// Read cloud from port.
-		std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> corners = in_om_corners_xyz.read();
-
-		// Check bb size.
-		// If too small.
-		while (bounding_box_colours.size() < corners.size()) {
-			// Add random colour.
-			pcl::PointXYZ rgb ((double)(rand()&255)/255.0, (double)(rand()&255)/255.0, (double)(rand()&255)/255.0);
-			bounding_box_colours.push_back(rgb);
-		}//: while
-		// If too big.
-		while (bounding_box_colours.size() > corners.size()) {
-			// Remove last colour from list.
-			bounding_box_colours.pop_back();
-		}//: while
-
-
-		for(int i=0; i< corners.size(); i++) {
-			// Generate given object BB name prefix.
-			std::ostringstream s;
-			s << i;
-			std::string cname = "bounding_line" + s.str();
-			// Get colour from list.
-			double r = bounding_box_colours[i].x;
-			double g = bounding_box_colours[i].y;
-			double b = bounding_box_colours[i].z;
-
-			// Remove lines one by one.
-			viewer->addLine(corners[i]->at(0), corners[i]->at(1), r, g, b, cname + std::string("01"));
-			viewer->addLine(corners[i]->at(1), corners[i]->at(2), r, g, b, cname + std::string("12"));
-			viewer->addLine(corners[i]->at(2), corners[i]->at(3), r, g, b, cname + std::string("23"));
-			viewer->addLine(corners[i]->at(3), corners[i]->at(0), r, g, b, cname + std::string("30"));
-			viewer->addLine(corners[i]->at(0), corners[i]->at(4), r, g, b, cname + std::string("04"));
-			viewer->addLine(corners[i]->at(1), corners[i]->at(5), r, g, b, cname + std::string("15"));
-			viewer->addLine(corners[i]->at(2), corners[i]->at(6), r, g, b, cname + std::string("26"));
-			viewer->addLine(corners[i]->at(3), corners[i]->at(7), r, g, b, cname + std::string("37"));
-			viewer->addLine(corners[i]->at(4), corners[i]->at(5), r, g, b, cname + std::string("45"));
-			viewer->addLine(corners[i]->at(5), corners[i]->at(6), r, g, b, cname + std::string("56"));
-			viewer->addLine(corners[i]->at(6), corners[i]->at(7), r, g, b, cname + std::string("67"));
-			viewer->addLine(corners[i]->at(7), corners[i]->at(4), r, g, b, cname + std::string("74"));
-		}//: for
-
-		previous_om_object_bounding_boxes_xyz_size = corners.size();
-	} else {
-		previous_om_object_bounding_boxes_xyz_size = 0;
+		viewer->removeCorrespondences(cname) ;
 	}//: else
 
+	if (prop_display_models_scene_correspondences) {
+
+		// Display correspondences.
+		for (int i = 0; i < models_scene_correspondences_.size(); ++i) {
+			// Get i-th model cloud.previous_om_object_bounding_boxes_xyz_size
+			pcl::CorrespondencesPtr correspondences = models_scene_correspondences_[i];
+			// Generate given correspondences set name prefix.
+			std::ostringstream s;
+			s << i;
+			std::string cname = "correspondences_" + s.str();
+
+			// Get colour from list.
+			double r = colours[i].x;
+			double g = colours[i].y;
+			double b = colours[i].z;
+
+			viewer->addCorrespondences<PointXYZSIFT>(scene_cloud_xyzsift_, om_clouds_xyzsift_[i], *correspondences, cname) ;
+			viewer->setShapeRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, r, g, b, cname) ;
+
+		}//: for
+	}//: if
 }
 
 

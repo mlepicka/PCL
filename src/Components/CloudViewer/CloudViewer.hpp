@@ -97,11 +97,15 @@ protected:
 	Base::DataStreamIn <std::vector< pcl::PointCloud<pcl::PointXYZ>::Ptr>, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex > in_om_corners_xyz;
 
 
+	/// Input data stream containing vector of corespondences beetwen models and scene clouds.
+	Base::DataStreamIn<std::vector<pcl::CorrespondencesPtr> > in_models_scene_correspondences;
+
+
 	/// Main handler - displays/hides clouds, coordinate systems, changes properties etc.
 	void refreshViewerState();
 
 
-	/// Display or hide XYZ clouds (scene and objects/models).
+/*	/// Display or hide XYZ clouds (scene and objects/models).
 	void displayClouds_xyz();
 
 	/// Display or hide XYZRGB clouds (scene and objects/models).
@@ -114,7 +118,7 @@ protected:
 	void displayClouds_xyzrgb_normals();
 
 	/// Displays wireframes (bounding boxes) generated on the basis of xyz cloud containing corners.
-	void displayObjectBoundingBoxesFromCorners_xyz();
+	void displayObjectBoundingBoxesFromCorners_xyz();*/
 
 
 
@@ -140,9 +144,6 @@ protected:
 	/// Property: level denoting display only every level'th point (default: 1, 100 COUSES ERROR).
 	Base::Property<int> prop_xyznormals_level;
 
-	/// Colours of bounding boxes (r,g,b channels normalized to <0,1>).
-	std::vector<pcl::PointXYZ> bounding_box_colours;
-
 	/// Display/hide XYZ cloud.
 	Base::Property<bool> prop_display_xyz;
 
@@ -164,6 +165,8 @@ protected:
 	/// Display/hide object bounding boxes.
 	Base::Property<bool> prop_display_object_bounding_boxes;
 
+	/// Display/hide object bounding boxes.
+	Base::Property<bool> prop_display_models_scene_correspondences;
 
 
 	/// Property: color of SIFT points. As default it is set to 1 row with 255, 0, 0 (red).
@@ -173,23 +176,43 @@ protected:
 	Base::Property<float> prop_xyzsift_size;
 
 
-	/// Value indicating how many objects/models names were displayed.
-	unsigned int previous_om_names_size;
+	/// Value indicating how many XYZRGB objects/models were previously displayed.
+	unsigned int previous_om_xyzrgb_size;
 
-	/// Value indicating how many objects/models clouds_xyzrgb were displayed.
-	unsigned int previous_om_clouds_xyzrgb_size;
+	/// Value indicating how many XYZSIFT objects/models were previously displayed.
+	unsigned int previous_om_xyzsift_size;
 
-	/// Value indicating how many objects/models clouds_xyzsift were displayed.
-	unsigned int previous_om_clouds_xyzsift_size;
+	/// Value indicating how many objects/models bounding boxes were previously displayed.
+	unsigned int previous_om_bb_size;
 
-	/// Value indicating how many objects/models wireframes (from corners) were displayed.
-	unsigned int previous_om_object_bounding_boxes_xyz_size;
+	unsigned int previous_ms_correspondences_size;
+
+	/// Colours of bounding boxes (r,g,b channels normalized to <0,1>).
+	std::vector<pcl::PointXYZ> colours;
+
+
+	void refreshSceneCloudXYZRGB(pcl::PointCloud<pcl::PointXYZRGB>::Ptr scene_cloud_xyzrgb_);
+
+	void refreshSceneCloudXYZSIFT(pcl::PointCloud<PointXYZSIFT>::Ptr scene_cloud_xyzsift_);
+
+	void refreshOMCloudsXYZRGB(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> om_clouds_xyzrgb_);
+
+	void refreshOMCloudsXYZSIFT(std::vector<pcl::PointCloud<PointXYZSIFT>::Ptr> om_clouds_xyzsift_);
+
+	void generateColours(unsigned int size_);
+
+	void refreshOMBoundingBoxesFromCorners(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>  om_corners_xyz_);
+
+	void refreshCorrespondences(std::vector<pcl::CorrespondencesPtr> models_scene_correspondences_, pcl::PointCloud<PointXYZSIFT>::Ptr scene_cloud_xyzsift_, std::vector<pcl::PointCloud<PointXYZSIFT>::Ptr> om_clouds_xyzsift_);
 
 	/// Viewer.
 	pcl::visualization::PCLVisualizer * viewer;
 
 	/// Parses colour in format r,g,b. Returns false if failed.
 	bool parseColor(std::string color_, double & r_, double & g_, double & b_);
+
+	// Displays and refreshes correspondences.
+//	void displayCorrespondences();
 
 };
 
