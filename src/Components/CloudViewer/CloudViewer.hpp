@@ -100,26 +100,32 @@ protected:
 	/// Input data stream containing vector of corespondences beetwen models and scene clouds.
 	Base::DataStreamIn<std::vector<pcl::CorrespondencesPtr>, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_models_scene_correspondences;
 
+	//Base::DataStreamIn<std::vector<std::pair<unsigned int, pcl::CorrespondencesPtr> >, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_objects_scene_correspondences;
+
 
 	/// Main handler - displays/hides clouds, coordinate systems, changes properties etc.
 	void refreshViewerState();
 
+	/// Displays or hides XYZRGB scene cloud.
+	void refreshSceneCloudXYZRGB(pcl::PointCloud<pcl::PointXYZRGB>::Ptr scene_cloud_xyzrgb_);
 
-/*	/// Display or hide XYZ clouds (scene and objects/models).
-	void displayClouds_xyz();
+	/// Displays or hides XYZSIFT scene cloud.
+	void refreshSceneCloudXYZSIFT(pcl::PointCloud<PointXYZSIFT>::Ptr scene_cloud_xyzsift_);
 
-	/// Display or hide XYZRGB clouds (scene and objects/models).
-	void displayClouds_xyzrgb();
+	/// Displays or hides XYZRGB object/model clouds.
+	void refreshOMCloudsXYZRGB(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> om_clouds_xyzrgb_);
 
-	/// Display or hide XYZSIFT clouds (scene and objects/models).
-	void displayClouds_xyzsift();
+	/// Displays or hides XYZSIFT object/model clouds.
+	void refreshOMCloudsXYZSIFT(std::vector<pcl::PointCloud<PointXYZSIFT>::Ptr> om_clouds_xyzsift_);
 
-	/// Display or hide XYZRGB clouds with normals (scene and objects/models).
-	void displayClouds_xyzrgb_normals();
+	/// Displays or hides object/models bounding boxes.
+	void refreshOMBoundingBoxesFromCorners(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>  om_corners_xyz_);
 
-	/// Displays wireframes (bounding boxes) generated on the basis of xyz cloud containing corners.
-	void displayObjectBoundingBoxesFromCorners_xyz();*/
+	/// Displays or hides models-scene correspondences.
+	void refreshModelsSceneCorrespondences(std::vector<pcl::CorrespondencesPtr> models_scene_correspondences_, pcl::PointCloud<PointXYZSIFT>::Ptr scene_cloud_xyzsift_, std::vector<pcl::PointCloud<PointXYZSIFT>::Ptr> om_clouds_xyzsift_);
 
+	/// Resizes vector of colours.
+	void resizeColourVector(unsigned int size_);
 
 
 	/// Property: title of the window.
@@ -185,37 +191,35 @@ protected:
 	/// Value indicating how many objects/models bounding boxes were previously displayed.
 	unsigned int previous_om_bb_size;
 
+	/// Value indicating how many models-scene correspondences were previously displayed.
 	unsigned int previous_ms_correspondences_size;
 
-	/// Colours of bounding boxes (r,g,b channels normalized to <0,1>).
-	std::vector<pcl::PointXYZ> colours;
+	/// Value indicating how many object-scene correspondences were previously displayed.
+	unsigned int previous_os_correspondences_size;
 
-	// Temporary variables - scene clouds.
+	/// Colours of bounding boxes (r,g,b channels normalized to <0,1>).
+	std::vector<double*> colours;
+
+	/// Temporary variables - scene XYZRGB cloud.
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr scene_cloud_xyzrgb;
+
+	/// Temporary variables - scene XYZSIFT cloud.
 	pcl::PointCloud<PointXYZSIFT>::Ptr scene_cloud_xyzsift;
 
-	// Temporary variables - object/models SIFT clouds.
+	/// Temporary variables - object/models XYZRGB clouds.
 	std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> om_clouds_xyzrgb;
+
+	/// Temporary variables - object/models XYSIFT clouds.
 	std::vector<pcl::PointCloud<PointXYZSIFT>::Ptr> om_clouds_xyzsift;
+
+	/// Temporary variables - clouds containing object/models corners.
 	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> om_corners_xyz;
 
-	// Temporary variables - correspondences.
+	/// Temporary variables - models-scene correspondences.
 	std::vector<pcl::CorrespondencesPtr> models_scene_correspondences;
 
-
-	void refreshSceneCloudXYZRGB(pcl::PointCloud<pcl::PointXYZRGB>::Ptr scene_cloud_xyzrgb_);
-
-	void refreshSceneCloudXYZSIFT(pcl::PointCloud<PointXYZSIFT>::Ptr scene_cloud_xyzsift_);
-
-	void refreshOMCloudsXYZRGB(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> om_clouds_xyzrgb_);
-
-	void refreshOMCloudsXYZSIFT(std::vector<pcl::PointCloud<PointXYZSIFT>::Ptr> om_clouds_xyzsift_);
-
-	void generateColours(unsigned int size_);
-
-	void refreshOMBoundingBoxesFromCorners(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>  om_corners_xyz_);
-
-	void refreshCorrespondences(std::vector<pcl::CorrespondencesPtr> models_scene_correspondences_, pcl::PointCloud<PointXYZSIFT>::Ptr scene_cloud_xyzsift_, std::vector<pcl::PointCloud<PointXYZSIFT>::Ptr> om_clouds_xyzsift_);
+	// Temporary variables - objects-scene correspondences (pairs of: model_ids, model-scene correspondences).
+	//std::vector<std::pair<unsigned int, pcl::CorrespondencesPtr> > objects_scene_correspondences;
 
 	/// Viewer.
 	pcl::visualization::PCLVisualizer * viewer;
