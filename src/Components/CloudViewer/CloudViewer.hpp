@@ -71,8 +71,8 @@ protected:
 	 */
 	bool onStop();
 
-	/// Data stream with cloud of XYZ points.
-	Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZ>::Ptr, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_cloud_xyz;
+	// Data stream with cloud of XYZ points.
+	//Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZ>::Ptr, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_cloud_xyz;
 
 	/// Data stream with cloud of XYZRGB points.
 	Base::DataStreamIn<pcl::PointCloud<pcl::PointXYZRGB>::Ptr, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_cloud_xyzrgb;
@@ -80,8 +80,8 @@ protected:
 	/// Data stream with cloud of XYZ SIFTs.
 	Base::DataStreamIn<pcl::PointCloud<PointXYZSIFT>::Ptr, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_cloud_xyzsift;
 
-	/// Data stream with cloud of XYZRGB points with normals.
-	Base::DataStreamIn< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_cloud_xyzrgb_normals;
+	// Data stream with cloud of XYZRGB points with normals.
+	//Base::DataStreamIn< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_cloud_xyzrgb_normals;
 
 
 	/// Input data stream containing vector of object/model ids.

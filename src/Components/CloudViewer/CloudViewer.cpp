@@ -92,16 +92,16 @@ CloudViewer::~CloudViewer() {
 
 void CloudViewer::prepareInterface() {
 	// Register basic cloud data streams.
-	registerStream("in_cloud_xyz", &in_cloud_xyz);
+	//registerStream("in_cloud_xyz", &in_cloud_xyz);
 	registerStream("in_cloud_xyzrgb", &in_cloud_xyzrgb);
 	registerStream("in_cloud_xyzsift", &in_cloud_xyzsift);
-	registerStream("in_cloud_xyzrgb_normals", &in_cloud_xyzrgb_normals);
+	//registerStream("in_cloud_xyzrgb_normals", &in_cloud_xyzrgb_normals);
 
 	// Register cloud "scene" aliases.
-	registerStream("in_scene_cloud_xyz", &in_cloud_xyz);
+	//registerStream("in_scene_cloud_xyz", &in_cloud_xyz);
 	registerStream("in_scene_cloud_xyzrgb", &in_cloud_xyzrgb);
 	registerStream("in_scene_cloud_xyzsift", &in_cloud_xyzsift);
-	registerStream("in_scene_cloud_xyzrgb_normals", &in_cloud_xyzrgb_normals);
+	//registerStream("in_scene_cloud_xyzrgb_normals", &in_cloud_xyzrgb_normals);
 
 	// Register cloud object/model streams.
 	registerStream("in_om_ids", &in_om_ids);
