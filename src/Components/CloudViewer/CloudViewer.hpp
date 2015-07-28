@@ -94,11 +94,11 @@ protected:
 	Base::DataStreamIn <std::vector< pcl::PointCloud<PointXYZSIFT>::Ptr>, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_om_clouds_xyzsift;
 
 	/// Input data stream containing vector of model corners (each being a cloud containing 8 XYZ points).
-	Base::DataStreamIn <std::vector< pcl::PointCloud<pcl::PointXYZ>::Ptr>, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex > in_om_corners_xyz;
+	Base::DataStreamIn <std::vector< pcl::PointCloud<pcl::PointXYZ>::Ptr>, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_om_corners_xyz;
 
 
 	/// Input data stream containing vector of corespondences beetwen models and scene clouds.
-	Base::DataStreamIn<std::vector<pcl::CorrespondencesPtr> > in_models_scene_correspondences;
+	Base::DataStreamIn<std::vector<pcl::CorrespondencesPtr>, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_models_scene_correspondences;
 
 
 	/// Main handler - displays/hides clouds, coordinate systems, changes properties etc.
@@ -189,6 +189,18 @@ protected:
 
 	/// Colours of bounding boxes (r,g,b channels normalized to <0,1>).
 	std::vector<pcl::PointXYZ> colours;
+
+	// Temporary variables - scene clouds.
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr scene_cloud_xyzrgb;
+	pcl::PointCloud<PointXYZSIFT>::Ptr scene_cloud_xyzsift;
+
+	// Temporary variables - object/models SIFT clouds.
+	std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> om_clouds_xyzrgb;
+	std::vector<pcl::PointCloud<PointXYZSIFT>::Ptr> om_clouds_xyzsift;
+	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> om_corners_xyz;
+
+	// Temporary variables - correspondences.
+	std::vector<pcl::CorrespondencesPtr> models_scene_correspondences;
 
 
 	void refreshSceneCloudXYZRGB(pcl::PointCloud<pcl::PointXYZRGB>::Ptr scene_cloud_xyzrgb_);
