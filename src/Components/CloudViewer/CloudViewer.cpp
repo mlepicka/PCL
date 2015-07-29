@@ -531,7 +531,7 @@ void CloudViewer::refreshModelsSceneCorrespondences(std::vector<pcl::Corresponde
 			double g = colours[i][1];
 			double b = colours[i][2];
 
-			viewer->addCorrespondences<PointXYZSIFT>(scene_cloud_xyzsift_, (om_clouds_xyzsift_[i]), *correspondences, cname) ;
+			viewer->addCorrespondences<PointXYZSIFT>((om_clouds_xyzsift_[i]), scene_cloud_xyzsift_, *correspondences, cname) ;
 			viewer->setShapeRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, r, g, b, cname) ;
 		}//: for
 
