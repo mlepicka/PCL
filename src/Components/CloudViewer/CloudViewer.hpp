@@ -191,6 +191,15 @@ protected:
 	/// Property: size of object/model label.
 	Base::Property<float> prop_label_scale;
 
+    /// Property: scene cloud translation - x
+    Base::Property<float> prop_scene_translation_x;
+
+    /// Property: scene cloud translation - y
+    Base::Property<float> prop_scene_translation_y;
+
+    /// Property: scene cloud translation - z
+    Base::Property<float> prop_scene_translation_z;
+
 
 	/// Value indicating how many XYZRGB objects/models were previously displayed.
 	unsigned int previous_om_xyzrgb_size;
@@ -214,7 +223,7 @@ protected:
 	std::vector<double*> colours;
 
 	/// Temporary variables - scene XYZRGB cloud.
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr scene_cloud_xyzrgb;
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr scene_cloud_xyzrgb;
 
 	/// Temporary variables - scene XYZSIFT cloud.
 	pcl::PointCloud<PointXYZSIFT>::Ptr scene_cloud_xyzsift;

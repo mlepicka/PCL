@@ -15,6 +15,7 @@
 #include <pcl/filters/filter.h>
 
 #include <pcl/common/centroid.h>
+#include <pcl/common/transforms.h>
 
 namespace Processors {
 namespace CloudViewer {
@@ -38,7 +39,10 @@ CloudViewer::CloudViewer(const std::string & name) :
 	prop_display_objects("display.objects", true),
 	prop_display_object_bounding_boxes("display.object_bounding_boxes",true),
 	prop_display_object_labels("display.object_labels", true),
-	prop_display_models_scene_correspondences("display.models_scene_correspondences",true)
+    prop_display_models_scene_correspondences("display.models_scene_correspondences",true),
+    prop_scene_translation_x("scene_translation.x", 0),
+    prop_scene_translation_y("scene_translation.y", 0),
+    prop_scene_translation_z("scene_translation.z", 0)
 {
 	// General properties.
 	registerProperty(prop_title);
@@ -67,6 +71,11 @@ CloudViewer::CloudViewer(const std::string & name) :
 
 	// Label properties.
 	registerProperty(prop_label_scale);
+
+    // Scene translation properties.
+    registerProperty(prop_scene_translation_x);
+    registerProperty(prop_scene_translation_y);
+    registerProperty(prop_scene_translation_z);
 
 	viewer = NULL;
 }
@@ -147,8 +156,8 @@ bool CloudViewer::onInit() {
 	//previous_os_correspondences_size = 0;
 
 	// Initialize
-	//scene_cloud_xyzrgb = pcl::PointCloud<pcl::PointXYZRGB>::Ptr (new pcl::PointCloud<pcl::PointXYZRGB>());
-	scene_cloud_xyzsift = pcl::PointCloud<PointXYZSIFT>::Ptr (new pcl::PointCloud<PointXYZSIFT>());
+    scene_cloud_xyzrgb = pcl::PointCloud<pcl::PointXYZRGB>::Ptr (new pcl::PointCloud<pcl::PointXYZRGB>());
+    scene_cloud_xyzsift = pcl::PointCloud<PointXYZSIFT>::Ptr (new pcl::PointCloud<PointXYZSIFT>());
 
 	return true;
 }
@@ -199,18 +208,26 @@ void CloudViewer::refreshViewerState() {
 //	bool is_fresh_scene_xyzsift = false;
 //	bool is_fresh_om_xyzsift = false;
 
+    // Define translation between clouds.
+    Eigen::Matrix4f trans = Eigen::Matrix4f::Identity();
+    trans(0, 3) = prop_scene_translation_x;
+    trans(1, 3) = prop_scene_translation_y;
+    trans(2, 3) = prop_scene_translation_z;
+
 	// Check scene xyzrgb cloud.
 	if (!in_cloud_xyzrgb.empty()){
-		scene_cloud_xyzrgb = in_cloud_xyzrgb.read();
-		refreshSceneCloudXYZRGB(scene_cloud_xyzrgb);
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr scene_cloud_xyzrgb_tmp = in_cloud_xyzrgb.read();
+        pcl::transformPointCloud(*scene_cloud_xyzrgb_tmp, *scene_cloud_xyzrgb, trans);
+        refreshSceneCloudXYZRGB(scene_cloud_xyzrgb);
 	}//: if
 
 
 	// Check scene xyzsift cloud.
 	if (!in_cloud_xyzsift.empty()){
-		scene_cloud_xyzsift = in_cloud_xyzsift.read();
+        pcl::PointCloud<PointXYZSIFT>::Ptr scene_cloud_xyzsift_tmp = in_cloud_xyzsift.read();
 		//is_fresh_scene_xyzsift = true;
-		refreshSceneCloudXYZSIFT(scene_cloud_xyzsift);
+        pcl::transformPointCloud(*scene_cloud_xyzsift_tmp, *scene_cloud_xyzsift, trans);
+        refreshSceneCloudXYZSIFT(scene_cloud_xyzsift);
 	}//: if
 
 
