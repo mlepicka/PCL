@@ -39,7 +39,7 @@ CloudViewer::CloudViewer(const std::string & name) :
 	prop_display_objects("display.objects", true),
 	prop_display_object_bounding_boxes("display.object_bounding_boxes",true),
 	prop_display_object_labels("display.object_labels", true),
-    prop_display_models_scene_correspondences("display.models_scene_correspondences",true),
+	prop_display_objects_scene_correspondences("display.objects_scene_correspondences",true),
     prop_scene_translation_x("scene_translation.x", 0),
     prop_scene_translation_y("scene_translation.y", 0),
     prop_scene_translation_z("scene_translation.z", 0)
@@ -59,7 +59,7 @@ CloudViewer::CloudViewer(const std::string & name) :
 	registerProperty(prop_display_xyzsift);
 	registerProperty(prop_display_xyznormals);
 	registerProperty(prop_display_object_bounding_boxes);
-	registerProperty(prop_display_models_scene_correspondences);
+	registerProperty(prop_display_objects_scene_correspondences);
 
 	// XYZNormals properties.
 	registerProperty(prop_xyznormals_scale);
@@ -120,15 +120,14 @@ void CloudViewer::prepareInterface() {
 	registerStream("in_scene_cloud_xyzsift", &in_cloud_xyzsift);
 	//registerStream("in_scene_cloud_xyzrgb_normals", &in_cloud_xyzrgb_normals);
 
-	// Register cloud object/model streams.
-	registerStream("in_om_labels", &in_om_labels);
-	registerStream("in_om_clouds_xyzrgb", &in_om_clouds_xyzrgb);
-	registerStream("in_om_clouds_xyzsift", &in_om_clouds_xyzsift);
-	registerStream("in_om_corners_xyz", &in_om_corners_xyz);
+	// Register cloud objects/clusters/models streams.
+	registerStream("in_object_labels", &in_object_labels);
+	registerStream("in_object_clouds_xyzrgb", &in_object_clouds_xyzrgb);
+	registerStream("in_object_clouds_xyzsift", &in_object_clouds_xyzsift);
+	registerStream("in_object_corners_xyz", &in_object_corners_xyz);
 
-	// Register cloud object/model correspondences streams.
-	registerStream("in_models_scene_correspondences", &in_models_scene_correspondences);
-	//registerStream("in_objects_scene_correspondences", &in_objects_scene_correspondences);
+	// Register cloud objects/clusters/models-scene correspondences streams.
+	registerStream("in_objects_scene_correspondences", &in_objects_scene_correspondences);
 
 	registerHandler("on_spin", boost::bind(&CloudViewer::refreshViewerState, this));
 	addDependency("on_spin", NULL);
@@ -150,7 +149,7 @@ bool CloudViewer::onInit() {
 	previous_om_xyzrgb_size = 0;
 	previous_om_xyzsift_size = 0;
 	previous_om_bb_size = 0;
-	previous_ms_correspondences_size = 0;
+	previous_oms_correspondences_size = 0;
 	previous_om_labels_size = 0;
 
 	//previous_os_correspondences_size = 0;
@@ -232,42 +231,42 @@ void CloudViewer::refreshViewerState() {
 
 
 	// Read om XYZRGB clouds from port.
-	if (!in_om_clouds_xyzrgb.empty()){
-			om_clouds_xyzrgb = in_om_clouds_xyzrgb.read();
-			refreshOMCloudsXYZRGB(om_clouds_xyzrgb);
+	if (!in_object_clouds_xyzrgb.empty()){
+			object_clouds_xyzrgb = in_object_clouds_xyzrgb.read();
+			refreshOMCloudsXYZRGB(object_clouds_xyzrgb);
 	}//: if
 
 	// Read om XYZSIFT clouds from port.
-	if (!in_om_clouds_xyzsift.empty()){
-			om_clouds_xyzsift = in_om_clouds_xyzsift.read();
-			refreshOMCloudsXYZSIFT(om_clouds_xyzsift);
+	if (!in_object_clouds_xyzsift.empty()){
+			object_clouds_xyzsift = in_object_clouds_xyzsift.read();
+			refreshOMCloudsXYZSIFT(object_clouds_xyzsift);
 			//is_fresh_om_xyzsift = true;
 	}//: if
 
 	// Read om bounding boxes from port.
-	if (!in_om_corners_xyz.empty()){
-			om_corners_xyz = in_om_corners_xyz.read();
-			refreshOMBoundingBoxesFromCorners(om_corners_xyz);
+	if (!in_object_corners_xyz.empty()){
+			object_corners_xyz = in_object_corners_xyz.read();
+			refreshOMBoundingBoxesFromCorners(object_corners_xyz);
 	}//: if
 
 	// Read models-scene correspondences from port.
-	if (!in_models_scene_correspondences.empty()){ // && is_fresh_scene_xyzsift && is_fresh_om_xyzsift){
+	if (!in_objects_scene_correspondences.empty()){ // && is_fresh_scene_xyzsift && is_fresh_om_xyzsift){
 			if (scene_cloud_xyzsift->empty()) {
 				CLOG(LERROR) << "Cannot display correspondences as scene_cloud_xyzsift is empty";
-			} else if (om_clouds_xyzsift.empty()) {
+			} else if (object_clouds_xyzsift.empty()) {
 				CLOG(LERROR) << "Cannot display correspondences as om_clouds_xyzsift is empty";
 			} else {
-				models_scene_correspondences = in_models_scene_correspondences.read();
-				refreshModelsSceneCorrespondences(models_scene_correspondences, scene_cloud_xyzsift, om_clouds_xyzsift);
+				objects_scene_correspondences = in_objects_scene_correspondences.read();
+				refreshModelsSceneCorrespondences(objects_scene_correspondences, scene_cloud_xyzsift, object_clouds_xyzsift);
 			}//: else
 	}//: if
 
 	// Read object/models names from port.
-	if (!in_om_labels.empty()){
-		if (om_corners_xyz.empty()) {
+	if (!in_object_labels.empty()){
+		if (object_corners_xyz.empty()) {
 			CLOG(LERROR) << "Cannot display object ids as om_corners_xyz is empty";
 		} else {
-			refreshOMIds(in_om_labels.read(), om_corners_xyz);
+			refreshOMIds(in_object_labels.read(), object_corners_xyz);
 		}//: else
 
 	}//: if
@@ -516,7 +515,7 @@ void CloudViewer::refreshModelsSceneCorrespondences(std::vector<pcl::Corresponde
 	CLOG(LDEBUG) << "Size of correspondences=" << models_scene_correspondences_.size() << " Size of om clouds=" << om_clouds_xyzsift_.size();
 
 	// Remove correspondences - TODO: FIX (but how?).
-	for(int i = 0; i < previous_ms_correspondences_size; i++){
+	for(int i = 0; i < previous_oms_correspondences_size; i++){
 		ostringstream s;
 		s << i;
 		std::string cname = "correspondences_" + s.str();
@@ -524,7 +523,7 @@ void CloudViewer::refreshModelsSceneCorrespondences(std::vector<pcl::Corresponde
 		viewer->removeCorrespondences(cname) ;
 	}//: else
 
-	if (prop_display_models_scene_correspondences) {
+	if (prop_display_objects_scene_correspondences) {
 
 		// Generate colour vector for MAX of om clouds (sifts, corners, correspondences,names).
 		resizeColourVector(models_scene_correspondences_.size());
@@ -549,9 +548,9 @@ void CloudViewer::refreshModelsSceneCorrespondences(std::vector<pcl::Corresponde
 			viewer->setShapeRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, r, g, b, cname) ;
 		}//: for
 
-		previous_ms_correspondences_size = models_scene_correspondences_.size();
+		previous_oms_correspondences_size = models_scene_correspondences_.size();
 	} else {
-		previous_ms_correspondences_size = 0;
+		previous_oms_correspondences_size = 0;
 	}//: else
 }
 
