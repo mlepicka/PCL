@@ -85,7 +85,7 @@ protected:
 
 
 	/// Input data stream containing vector of object/model ids.
-	Base::DataStreamIn <std::vector< std::string>, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_om_ids;
+	Base::DataStreamIn <std::vector< std::string>, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_om_labels;
 
 	/// Input data stream containing vector of XYZRGB clouds (objects/models).
 	Base::DataStreamIn <std::vector< pcl::PointCloud<pcl::PointXYZRGB>::Ptr>, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_om_clouds_xyzrgb;
@@ -123,6 +123,10 @@ protected:
 
 	/// Displays or hides models-scene correspondences.
 	void refreshModelsSceneCorrespondences(std::vector<pcl::CorrespondencesPtr> models_scene_correspondences_, pcl::PointCloud<PointXYZSIFT>::Ptr scene_cloud_xyzsift_, std::vector<pcl::PointCloud<PointXYZSIFT>::Ptr> om_clouds_xyzsift_);
+
+	/// Displays or hides object/models bounding boxes.
+	void refreshOMIds(std::vector<std::string>  om_ids_, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>  om_corners_xyz_);
+
 
 	/// Resizes vector of colours.
 	void resizeColourVector(unsigned int size_);
@@ -168,6 +172,9 @@ protected:
 	/// Display/hide XYZRGB clouds.
 	Base::Property<bool> prop_display_objects;
 
+	/// Display/hide object/model names.
+	Base::Property<bool> prop_display_object_labels;
+
 	/// Display/hide object bounding boxes.
 	Base::Property<bool> prop_display_object_bounding_boxes;
 
@@ -181,6 +188,9 @@ protected:
 	/// Property: size of SIFT points. As default it is set to 1.
 	Base::Property<float> prop_xyzsift_size;
 
+	/// Property: size of object/model label.
+	Base::Property<float> prop_label_scale;
+
 
 	/// Value indicating how many XYZRGB objects/models were previously displayed.
 	unsigned int previous_om_xyzrgb_size;
@@ -190,6 +200,9 @@ protected:
 
 	/// Value indicating how many objects/models bounding boxes were previously displayed.
 	unsigned int previous_om_bb_size;
+
+	/// Value indicating how many objects/models names were previously displayed.
+	unsigned int previous_om_labels_size;
 
 	/// Value indicating how many models-scene correspondences were previously displayed.
 	unsigned int previous_ms_correspondences_size;
@@ -221,14 +234,11 @@ protected:
 	// Temporary variables - objects-scene correspondences (pairs of: model_ids, model-scene correspondences).
 	//std::vector<std::pair<unsigned int, pcl::CorrespondencesPtr> > objects_scene_correspondences;
 
-	/// Viewer.
+	/// Viewer object.
 	pcl::visualization::PCLVisualizer * viewer;
 
 	/// Parses colour in format r,g,b. Returns false if failed.
 	bool parseColor(std::string color_, double & r_, double & g_, double & b_);
-
-	// Displays and refreshes correspondences.
-//	void displayCorrespondences();
 
 };
 

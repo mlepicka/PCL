@@ -14,6 +14,8 @@
 #include <boost/bind.hpp>
 #include <pcl/filters/filter.h>
 
+#include <pcl/common/centroid.h>
+
 namespace Processors {
 namespace CloudViewer {
 
@@ -27,6 +29,7 @@ CloudViewer::CloudViewer(const std::string & name) :
 	prop_xyznormals_level("xyznormals.level", 1),
 	prop_xyzsift_size("xyzsift.size", 1),
 	prop_xyzsift_color("xyzsift.color", std::string("255,0,0")),
+	prop_label_scale("labels.scale", 0.1),
 	prop_display_xyz("display.xyz", true),
 	prop_display_xyzrgb("display.xyzrgb", true),
 	prop_display_xyzsift("display.xyzsift", true),
@@ -34,6 +37,7 @@ CloudViewer::CloudViewer(const std::string & name) :
 	prop_display_scene("display.scene", true),
 	prop_display_objects("display.objects", true),
 	prop_display_object_bounding_boxes("display.object_bounding_boxes",true),
+	prop_display_object_labels("display.object_labels", true),
 	prop_display_models_scene_correspondences("display.models_scene_correspondences",true)
 {
 	// General properties.
@@ -45,6 +49,7 @@ CloudViewer::CloudViewer(const std::string & name) :
 	// Display properties.
 	registerProperty(prop_display_scene);
 	registerProperty(prop_display_objects);
+	registerProperty(prop_display_object_labels);
 	registerProperty(prop_display_xyz);
 	registerProperty(prop_display_xyzrgb);
 	registerProperty(prop_display_xyzsift);
@@ -59,6 +64,9 @@ CloudViewer::CloudViewer(const std::string & name) :
 	// XYZSIFT properties.
 	registerProperty(prop_xyzsift_size);
 	registerProperty(prop_xyzsift_color);
+
+	// Label properties.
+	registerProperty(prop_label_scale);
 
 	viewer = NULL;
 }
@@ -104,7 +112,7 @@ void CloudViewer::prepareInterface() {
 	//registerStream("in_scene_cloud_xyzrgb_normals", &in_cloud_xyzrgb_normals);
 
 	// Register cloud object/model streams.
-	registerStream("in_om_ids", &in_om_ids);
+	registerStream("in_om_labels", &in_om_labels);
 	registerStream("in_om_clouds_xyzrgb", &in_om_clouds_xyzrgb);
 	registerStream("in_om_clouds_xyzsift", &in_om_clouds_xyzsift);
 	registerStream("in_om_corners_xyz", &in_om_corners_xyz);
@@ -121,19 +129,26 @@ void CloudViewer::prepareInterface() {
 
 bool CloudViewer::onInit() {
 	CLOG(LTRACE) << "onInit";
-	viewer = new pcl::visualization::PCLVisualizer(prop_title);
 
-	// Init camera parameters.
+	// Initialize camera and set its parameters.
+	viewer = new pcl::visualization::PCLVisualizer(prop_title);
 	viewer->initCameraParameters();
 
-	// Init variables.
+	// Initialize  coodrinate system flag.
 	coordinate_system_status_flag = !prop_coordinate_system;
 
+	// Initialize  previous sizes.
 	previous_om_xyzrgb_size = 0;
 	previous_om_xyzsift_size = 0;
 	previous_om_bb_size = 0;
 	previous_ms_correspondences_size = 0;
+	previous_om_labels_size = 0;
+
 	//previous_os_correspondences_size = 0;
+
+	// Initialize
+	//scene_cloud_xyzrgb = pcl::PointCloud<pcl::PointXYZRGB>::Ptr (new pcl::PointCloud<pcl::PointXYZRGB>());
+	scene_cloud_xyzsift = pcl::PointCloud<PointXYZSIFT>::Ptr (new pcl::PointCloud<PointXYZSIFT>());
 
 	return true;
 }
@@ -181,8 +196,8 @@ void CloudViewer::refreshViewerState() {
 	// TODO: check sizes of om names/clouds!!!
 	// Check whether object names changed - if so, reload all objects, if not - leave unchanged... what about object poses?
 
-	bool is_fresh_scene_xyzsift = false;
-	bool is_fresh_om_xyzsift = false;
+//	bool is_fresh_scene_xyzsift = false;
+//	bool is_fresh_om_xyzsift = false;
 
 	// Check scene xyzrgb cloud.
 	if (!in_cloud_xyzrgb.empty()){
@@ -194,7 +209,7 @@ void CloudViewer::refreshViewerState() {
 	// Check scene xyzsift cloud.
 	if (!in_cloud_xyzsift.empty()){
 		scene_cloud_xyzsift = in_cloud_xyzsift.read();
-		is_fresh_scene_xyzsift = true;
+		//is_fresh_scene_xyzsift = true;
 		refreshSceneCloudXYZSIFT(scene_cloud_xyzsift);
 	}//: if
 
@@ -209,7 +224,7 @@ void CloudViewer::refreshViewerState() {
 	if (!in_om_clouds_xyzsift.empty()){
 			om_clouds_xyzsift = in_om_clouds_xyzsift.read();
 			refreshOMCloudsXYZSIFT(om_clouds_xyzsift);
-			is_fresh_om_xyzsift = true;
+			//is_fresh_om_xyzsift = true;
 	}//: if
 
 	// Read om bounding boxes from port.
@@ -219,9 +234,25 @@ void CloudViewer::refreshViewerState() {
 	}//: if
 
 	// Read models-scene correspondences from port.
-	if ((!in_models_scene_correspondences.empty())){// && is_fresh_scene_xyzsift && is_fresh_om_xyzsift){
-			models_scene_correspondences = in_models_scene_correspondences.read();
-			refreshModelsSceneCorrespondences(models_scene_correspondences, scene_cloud_xyzsift, om_clouds_xyzsift);
+	if (!in_models_scene_correspondences.empty()){ // && is_fresh_scene_xyzsift && is_fresh_om_xyzsift){
+			if (scene_cloud_xyzsift->empty()) {
+				CLOG(LERROR) << "Cannot display correspondences as scene_cloud_xyzsift is empty";
+			} else if (om_clouds_xyzsift.empty()) {
+				CLOG(LERROR) << "Cannot display correspondences as om_clouds_xyzsift is empty";
+			} else {
+				models_scene_correspondences = in_models_scene_correspondences.read();
+				refreshModelsSceneCorrespondences(models_scene_correspondences, scene_cloud_xyzsift, om_clouds_xyzsift);
+			}//: else
+	}//: if
+
+	// Read object/models names from port.
+	if (!in_om_labels.empty()){
+		if (om_corners_xyz.empty()) {
+			CLOG(LERROR) << "Cannot display object ids as om_corners_xyz is empty";
+		} else {
+			refreshOMIds(in_om_labels.read(), om_corners_xyz);
+		}//: else
+
 	}//: if
 
 
@@ -350,7 +381,7 @@ void CloudViewer::refreshOMCloudsXYZSIFT(std::vector<pcl::PointCloud<PointXYZSIF
 		previous_om_xyzsift_size = 0;
 	} else {
 
-		// Generate colour vector for MAX of om clouds (sifts, corners, correspondences).
+		// Generate colour vector for MAX of om clouds (sifts, corners, correspondences,names).
 		resizeColourVector(om_clouds_xyzsift_.size());
 
 		// Update object clouds that need to be updated.
@@ -426,7 +457,7 @@ void CloudViewer::refreshOMBoundingBoxesFromCorners(std::vector<pcl::PointCloud<
 
 	if (prop_display_object_bounding_boxes) {
 
-		// Generate colour vector for MAX of om clouds (sifts, corners, correspondences).
+		// Generate colour vector for MAX of om clouds (sifts, corners, correspondences,names).
 		resizeColourVector(om_corners_xyz_.size());
 
 		for(int i=0; i< om_corners_xyz_.size(); i++) {
@@ -459,6 +490,129 @@ void CloudViewer::refreshOMBoundingBoxesFromCorners(std::vector<pcl::PointCloud<
 		previous_om_bb_size = 0;
 	}//: else
 }
+
+
+
+void CloudViewer::refreshModelsSceneCorrespondences(std::vector<pcl::CorrespondencesPtr> models_scene_correspondences_, pcl::PointCloud<PointXYZSIFT>::Ptr scene_cloud_xyzsift_, std::vector<pcl::PointCloud<PointXYZSIFT>::Ptr> om_clouds_xyzsift_) {
+	CLOG(LTRACE) << "refreshModelsSceneCorrespondences";
+
+	CLOG(LDEBUG) << "Size of correspondences=" << models_scene_correspondences_.size() << " Size of om clouds=" << om_clouds_xyzsift_.size();
+
+	// Remove correspondences - TODO: FIX (but how?).
+	for(int i = 0; i < previous_ms_correspondences_size; i++){
+		ostringstream s;
+		s << i;
+		std::string cname = "correspondences_" + s.str();
+
+		viewer->removeCorrespondences(cname) ;
+	}//: else
+
+	if (prop_display_models_scene_correspondences) {
+
+		// Generate colour vector for MAX of om clouds (sifts, corners, correspondences,names).
+		resizeColourVector(models_scene_correspondences_.size());
+
+		// Display correspondences.
+		for (size_t i = 0; i<models_scene_correspondences_.size(); ++i) {
+			CLOG(LDEBUG) << "Adding " << i << "-th model-scene correspondences";
+
+			// Get i-th model cloud.previous_om_object_bounding_boxes_xyz_size
+			pcl::CorrespondencesPtr correspondences = models_scene_correspondences_[i];
+			// Generate given correspondences set name prefix.
+			std::ostringstream s;
+			s << i;
+			std::string cname = "correspondences_" + s.str();
+
+			// Get colour from list.
+			double r = colours[i][0];
+			double g = colours[i][1];
+			double b = colours[i][2];
+
+			viewer->addCorrespondences<PointXYZSIFT>((om_clouds_xyzsift_[i]), scene_cloud_xyzsift_, *correspondences, cname) ;
+			viewer->setShapeRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, r, g, b, cname) ;
+		}//: for
+
+		previous_ms_correspondences_size = models_scene_correspondences_.size();
+	} else {
+		previous_ms_correspondences_size = 0;
+	}//: else
+}
+
+void CloudViewer::refreshOMIds(std::vector<std::string>  om_ids_, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>  om_corners_xyz_) {
+	CLOG(LTRACE) << "refreshOMNames";
+
+	// Remove previous names.
+	for(int i = 0; i < previous_om_labels_size; i++){
+		ostringstream s;
+		s << i;
+		std::string cname = "name_" + s.str();
+
+		viewer->removeText3D(cname) ;
+	}//: else
+
+	if (prop_display_object_labels) {
+
+		// Generate colour vector for MAX of om clouds (sifts, corners, correspondences,names).
+		resizeColourVector(om_ids_.size());
+
+		// Display correspondences.
+		for (size_t i = 0; i<om_ids_.size(); ++i) {
+			CLOG(LDEBUG) << "Adding " << i << "-th o/m name";
+
+			// Get i-th model name.
+			std::string om_id = om_ids_[i];
+			// Generate name.
+			std::ostringstream s;
+			s << i;
+			std::string cname = "name_" + s.str();
+
+			// Get colour from list.
+			double r = colours[i][0];
+			double g = colours[i][1];
+			double b = colours[i][2];
+
+			// Create and accumulate points
+			pcl::CentroidPoint<pcl::PointXYZ> centroid;
+			for (size_t j = 0; j < 8; ++j) {
+				centroid.add( om_corners_xyz_[i]->at(j) );
+			}//: for
+			// Fetch centroid using `get()`
+			pcl::PointXYZ om_center;
+			centroid.get (om_center);
+
+			viewer->addText3D ( om_id, om_center, prop_label_scale, r, g, b, cname);
+		}//: for
+
+		previous_om_labels_size = om_ids_.size();
+	} else {
+		previous_om_labels_size = 0;
+	}//: else
+
+}
+
+
+void CloudViewer::resizeColourVector(unsigned int size_) {
+	CLOG(LTRACE) << "resizeColourVector";
+
+	CLOG(LDEBUG) << "at start: max size_ =" << size_ << "colours.size() =" << colours.size();
+	// If too small.
+	while (colours.size() < size_) {
+		// Add random colour.
+		double* rgb = new double(3);
+		for (size_t i = 0; i < 3; ++i) {
+			rgb[i] = (double)(rand()&255)/255.0;
+		}//: for
+		CLOG(LDEBUG) << "rgb =" << rgb[0] << "," << rgb[1] << "," << rgb[2];
+		colours.push_back(rgb);
+	}//: while
+	// If too big.
+	/*while (colours.size() > size_) {
+		// Remove last colour from list.
+		colours.pop_back();
+	}//: while*/
+	CLOG(LDEBUG) << "at end: max size_ =" << size_ << "colours.size() =" << colours.size();
+}
+
 
 
 /*
@@ -494,75 +648,6 @@ void CloudViewer::displayClouds_xyzrgb_normals() {
 	}//: else
 }
 */
-
-
-void CloudViewer::refreshModelsSceneCorrespondences(std::vector<pcl::CorrespondencesPtr> models_scene_correspondences_, pcl::PointCloud<PointXYZSIFT>::Ptr scene_cloud_xyzsift_, std::vector<pcl::PointCloud<PointXYZSIFT>::Ptr> om_clouds_xyzsift_) {
-	CLOG(LTRACE) << "refreshCorrespondences";
-
-	CLOG(LDEBUG) << "Size of correspondences=" << models_scene_correspondences_.size() << " Size of om clouds=" << om_clouds_xyzsift_.size();
-
-	// Remove correspondences - TODO FIX.
-	for(int i = 0; i < previous_ms_correspondences_size; i++){
-		ostringstream s;
-		s << i;
-		std::string cname = "correspondences_" + s.str();
-
-		viewer->removeCorrespondences(cname) ;
-	}//: else
-
-	if (prop_display_models_scene_correspondences) {
-
-		// Generate colour vector for MAX of om clouds (sifts, corners, correspondences).
-		resizeColourVector(models_scene_correspondences_.size());
-
-		// Display correspondences.
-		for (int i = 0; i<models_scene_correspondences_.size(); ++i) {
-			CLOG(LDEBUG) << "Adding " << i << "-th model-scene correspondences";
-
-			// Get i-th model cloud.previous_om_object_bounding_boxes_xyz_size
-			pcl::CorrespondencesPtr correspondences = models_scene_correspondences_[i];
-			// Generate given correspondences set name prefix.
-			std::ostringstream s;
-			s << i;
-			std::string cname = "correspondences_" + s.str();
-
-			// Get colour from list.
-			double r = colours[i][0];
-			double g = colours[i][1];
-			double b = colours[i][2];
-
-			viewer->addCorrespondences<PointXYZSIFT>((om_clouds_xyzsift_[i]), scene_cloud_xyzsift_, *correspondences, cname) ;
-			viewer->setShapeRenderingProperties (pcl::visualization::PCL_VISUALIZER_COLOR, r, g, b, cname) ;
-		}//: for
-
-		previous_ms_correspondences_size = models_scene_correspondences_.size();
-	} else {
-		previous_om_bb_size = 0;
-	}//: else
-}
-
-
-void CloudViewer::resizeColourVector(unsigned int size_) {
-	CLOG(LTRACE) << "resizeColourVector";
-
-	CLOG(LDEBUG) << "at start: max size_ =" << size_ << "colours.size() =" << colours.size();
-	// If too small.
-	while (colours.size() < size_) {
-		// Add random colour.
-		double* rgb = new double(3);
-		for (unsigned int i = 0; i < 3; ++i) {
-			rgb[i] = (double)(rand()&255)/255.0;
-		}//: for
-		CLOG(LDEBUG) << "rgb =" << rgb[0] << "," << rgb[1] << "," << rgb[2];
-		colours.push_back(rgb);
-	}//: while
-	// If too big.
-	/*while (colours.size() > size_) {
-		// Remove last colour from list.
-		colours.pop_back();
-	}//: while*/
-	CLOG(LDEBUG) << "at end: max size_ =" << size_ << "colours.size() =" << colours.size();
-}
 
 
 } //: namespace CloudViewer
