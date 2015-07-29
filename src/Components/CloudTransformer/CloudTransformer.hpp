@@ -79,23 +79,43 @@ protected:
 	Base::DataStreamIn<pcl::PointCloud<PointXYZSHOT>::Ptr, Base::DataStreamBuffer::Newest> in_cloud_xyzshot;
 	Base::DataStreamIn<Types::HomogMatrix, Base::DataStreamBuffer::Newest> in_hm;
 
+    Base::DataStreamIn<vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>, Base::DataStreamBuffer::Newest> in_clouds_xyz;
+    Base::DataStreamIn<vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>, Base::DataStreamBuffer::Newest> in_clouds_xyzrgb;
+    Base::DataStreamIn<vector<pcl::PointCloud<PointXYZSIFT>::Ptr>, Base::DataStreamBuffer::Newest> in_clouds_xyzsift;
+    Base::DataStreamIn<vector<pcl::PointCloud<PointXYZSHOT>::Ptr>, Base::DataStreamBuffer::Newest> in_clouds_xyzshot;
+    Base::DataStreamIn<vector<Types::HomogMatrix>, Base::DataStreamBuffer::Newest> in_hms;
+
 	// Output data streams
 	Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZ>::Ptr> out_cloud_xyz;
 	Base::DataStreamOut<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> out_cloud_xyzrgb;
 	Base::DataStreamOut<pcl::PointCloud<PointXYZSIFT>::Ptr> out_cloud_xyzsift;
 	Base::DataStreamOut<pcl::PointCloud<PointXYZSHOT>::Ptr> out_cloud_xyzshot;
 
+    Base::DataStreamOut<vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> > out_clouds_xyz;
+    Base::DataStreamOut<vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> > out_clouds_xyzrgb;
+    Base::DataStreamOut<vector<pcl::PointCloud<PointXYZSIFT>::Ptr> > out_clouds_xyzsift;
+    Base::DataStreamOut<vector<pcl::PointCloud<PointXYZSHOT>::Ptr> > out_clouds_xyzshot;
+
 	// Handlers
 	void transform_clouds();
+    void transform_vector_of_clouds();
 
-	//   Helper functions, specialized for every cloud type.
+
+    // Helper functions, specialized for every cloud type.
 	void transform_xyz(Types::HomogMatrix hm_);
 	void transform_xyzrgb(Types::HomogMatrix hm_);
 	void transform_xyzsift(Types::HomogMatrix hm_);
 	void transform_xyzshot(Types::HomogMatrix hm_);
 
-	// Property - if true, the component will not transform the input cloud.
+    void transform_vector_xyz(vector<Types::HomogMatrix> hms_);
+    void transform_vector_xyzrgb(vector<Types::HomogMatrix> hms_);
+    void transform_vector_xyzsift(vector<Types::HomogMatrix> hms_);
+    void transform_vector_xyzshot(vector<Types::HomogMatrix> hms_);
+
+    /// Property: if true, the component will not transform the input cloud.
     Base::Property<bool> pass_through;
+
+    /// Property: inverse transformation(s).
     Base::Property<bool> inverse;
 
 };
