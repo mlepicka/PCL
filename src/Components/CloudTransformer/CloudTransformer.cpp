@@ -102,6 +102,36 @@ void CloudTransformer::transform_clouds() {
     // Try to transform XYZSHOT.
     if(!in_cloud_xyzshot.empty())
     	transform_xyzshot(hm);
+
+    //Transform all clouds i vector by one transformation
+
+    // Try to transform vector XYZ.
+    if(!in_clouds_xyz.empty()){
+        vector<Types::HomogMatrix> hms;
+        hms.push_back(hm);
+        transform_vector_xyz(hms);
+    }
+
+    // Try to transform vector XYZRGB.
+    if(!in_clouds_xyzrgb.empty()){
+        vector<Types::HomogMatrix> hms;
+        hms.push_back(hm);
+        transform_vector_xyzrgb(hms);
+    }
+
+    // Try to transform vector XYZSIFT.
+    if(!in_clouds_xyzsift.empty()){
+        vector<Types::HomogMatrix> hms;
+        hms.push_back(hm);
+        transform_vector_xyzsift(hms);
+    }
+
+    // Try to transform vector XYZSHOT.
+    if(!in_clouds_xyzshot.empty()){
+        vector<Types::HomogMatrix> hms;
+        hms.push_back(hm);
+        transform_vector_xyzshot(hms);
+    }
 }
 
 void CloudTransformer::transform_vector_of_clouds() {
@@ -201,12 +231,17 @@ void CloudTransformer::transform_xyzshot(Types::HomogMatrix hm_) {
 
 
 void CloudTransformer::transform_vector_xyz(vector<Types::HomogMatrix> hms_) {
-    CLOG(LTRACE) << "transform_xyz()";
+    CLOG(LTRACE) << "transform_vector_xyz()";
     // Reads clouds.
     vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clouds = in_clouds_xyz.read();
     vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clouds2;
 
     if (!pass_through) {
+        if(hms_.size() < clouds.size())
+            CLOG(LDEBUG) << "hms_.size() = " << hms_.size() << " clouds.size()= " << clouds.size();
+        while(hms_.size() < clouds.size()){
+            hms_.push_back(hms_[0]);
+        }
         // Transform cloud.
         for(int i = 0; i < hms_.size(); i++){
             pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_tmp(new pcl::PointCloud<pcl::PointXYZ>());
@@ -221,12 +256,17 @@ void CloudTransformer::transform_vector_xyz(vector<Types::HomogMatrix> hms_) {
 }
 
 void CloudTransformer::transform_vector_xyzrgb(vector<Types::HomogMatrix> hms_) {
-    CLOG(LTRACE) << "transform_xyzrgb()";
+    CLOG(LTRACE) << "transform_vector_xyzrgb()";
     // Reads clouds.
     vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> clouds = in_clouds_xyzrgb.read();
     vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> clouds2;
 
     if (!pass_through) {
+        if(hms_.size() < clouds.size())
+            CLOG(LDEBUG) << "hms_.size() = " << hms_.size() << " clouds.size()= " << clouds.size();
+        while(hms_.size() < clouds.size()){
+            hms_.push_back(hms_[0]);
+        }
         // Transform cloud.
         for(int i = 0; i < hms_.size(); i++){
             pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_tmp(new pcl::PointCloud<pcl::PointXYZRGB>());
@@ -241,12 +281,17 @@ void CloudTransformer::transform_vector_xyzrgb(vector<Types::HomogMatrix> hms_) 
 }
 
 void CloudTransformer::transform_vector_xyzsift(vector<Types::HomogMatrix> hms_) {
-    CLOG(LTRACE) << "transform_xyzsift()";
+    CLOG(LTRACE) << "transform_vector_xyzsift()";
     // Reads clouds.
     vector<pcl::PointCloud<PointXYZSIFT>::Ptr> clouds = in_clouds_xyzsift.read();
     vector<pcl::PointCloud<PointXYZSIFT>::Ptr> clouds2;
 
     if (!pass_through) {
+        if(hms_.size() < clouds.size())
+            CLOG(LDEBUG) << "hms_.size() = " << hms_.size() << " clouds.size()= " << clouds.size();
+        while(hms_.size() < clouds.size()){
+            hms_.push_back(hms_[0]);
+        }
         // Transform clouds.
         for(int i = 0; i < hms_.size(); i++){
             pcl::PointCloud<PointXYZSIFT>::Ptr cloud_tmp(new pcl::PointCloud<PointXYZSIFT>());
@@ -261,12 +306,17 @@ void CloudTransformer::transform_vector_xyzsift(vector<Types::HomogMatrix> hms_)
 }
 
 void CloudTransformer::transform_vector_xyzshot(vector<Types::HomogMatrix> hms_) {
-    CLOG(LTRACE) << "transform_xyzshot()";
+    CLOG(LTRACE) << "transform_vector_xyzshot()";
     // Reads clouds.
     vector<pcl::PointCloud<PointXYZSHOT>::Ptr> clouds = in_clouds_xyzshot.read();
     vector<pcl::PointCloud<PointXYZSHOT>::Ptr> clouds2;
 
     if (!pass_through) {
+        if(hms_.size() < clouds.size())
+            CLOG(LDEBUG) << "hms_.size() = " << hms_.size() << " clouds.size()= " << clouds.size();
+        while(hms_.size() < clouds.size()){
+            hms_.push_back(hms_[0]);
+        }
         // Transform clouds.
         for(int i = 0; i < hms_.size(); i++){
             pcl::PointCloud<PointXYZSHOT>::Ptr cloud_tmp(new pcl::PointCloud<PointXYZSHOT>());
