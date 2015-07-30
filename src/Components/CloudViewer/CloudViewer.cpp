@@ -206,6 +206,7 @@ void CloudViewer::refreshViewerState() {
 
 //	bool is_fresh_scene_xyzsift = false;
 //	bool is_fresh_om_xyzsift = false;
+    bool refresh_correspondences = false;
 
     // Define translation between clouds.
     Eigen::Matrix4f trans = Eigen::Matrix4f::Identity();
@@ -227,6 +228,7 @@ void CloudViewer::refreshViewerState() {
 		//is_fresh_scene_xyzsift = true;
         pcl::transformPointCloud(*scene_cloud_xyzsift_tmp, *scene_cloud_xyzsift, trans);
         refreshSceneCloudXYZSIFT(scene_cloud_xyzsift);
+        refresh_correspondences = true;
 	}//: if
 
 
@@ -241,7 +243,8 @@ void CloudViewer::refreshViewerState() {
 			object_clouds_xyzsift = in_object_clouds_xyzsift.read();
 			refreshOMCloudsXYZSIFT(object_clouds_xyzsift);
 			//is_fresh_om_xyzsift = true;
-	}//: if
+            refresh_correspondences = true;
+    }//: if
 
 	// Read om bounding boxes from port.
 	if (!in_object_corners_xyz.empty()){
@@ -250,13 +253,19 @@ void CloudViewer::refreshViewerState() {
 	}//: if
 
 	// Read models-scene correspondences from port.
-	if (!in_objects_scene_correspondences.empty()){ // && is_fresh_scene_xyzsift && is_fresh_om_xyzsift){
+    if (!in_objects_scene_correspondences.empty()){
+        objects_scene_correspondences = in_objects_scene_correspondences.read();
+        refresh_correspondences = true;
+    }//: if
+
+    if (refresh_correspondences){ // && is_fresh_scene_xyzsift && is_fresh_om_xyzsift){
 			if (scene_cloud_xyzsift->empty()) {
 				CLOG(LERROR) << "Cannot display correspondences as scene_cloud_xyzsift is empty";
 			} else if (object_clouds_xyzsift.empty()) {
 				CLOG(LERROR) << "Cannot display correspondences as om_clouds_xyzsift is empty";
-			} else {
-				objects_scene_correspondences = in_objects_scene_correspondences.read();
+            } else if (objects_scene_correspondences.empty()) {
+                CLOG(LERROR) << "Cannot display correspondences as objects_scene_correspondences is empty";
+            } else {
 				refreshModelsSceneCorrespondences(objects_scene_correspondences, scene_cloud_xyzsift, object_clouds_xyzsift);
 			}//: else
 	}//: if
