@@ -524,7 +524,10 @@ void CloudViewer::refreshModelsSceneCorrespondences(std::vector<pcl::Corresponde
 	}//: else
 
 	if (prop_display_objects_scene_correspondences) {
-
+        if(om_clouds_xyzsift_.size() != models_scene_correspondences_.size()){
+            CLOG(LERROR) << "Wrong correspondences size";
+            return;
+        }
 		// Generate colour vector for MAX of om clouds (sifts, corners, correspondences,names).
 		resizeColourVector(models_scene_correspondences_.size());
 
