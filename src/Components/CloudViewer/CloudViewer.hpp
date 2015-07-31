@@ -17,6 +17,7 @@
 
 #include <pcl/visualization/pcl_visualizer.h>
 #include <Types/PointXYZSIFT.hpp>
+#include <Types/HomogMatrix.hpp>
 
 
 
@@ -100,7 +101,8 @@ protected:
 	/// Input data stream containing vector of corespondences beetwen objects/clusters/models and scene clouds.
 	Base::DataStreamIn<std::vector<pcl::CorrespondencesPtr>, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_objects_scene_correspondences;
 
-	//Base::DataStreamIn<std::vector<std::pair<unsigned int, pcl::CorrespondencesPtr> >, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_objects_scene_correspondences;
+	/// Input data stream containing vector of poses of objects/clusters/models.
+	Base::DataStreamIn<std::vector<Types::HomogMatrix>, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex>  in_object_poses;
 
 
 	/// Main handler - displays/hides clouds, coordinate systems, changes properties etc.
@@ -127,6 +129,8 @@ protected:
 	/// Displays or hides object/models bounding boxes.
 	void refreshOMIds(std::vector<std::string>  om_ids_, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>  om_corners_xyz_);
 
+	/// Displays or hides object/models coordinate systems.
+	void refreshOMCoordinateSystems(std::vector<Types::HomogMatrix> om_poses_);
 
 	/// Resizes vector of colours.
 	void resizeColourVector(unsigned int size_);
@@ -136,13 +140,13 @@ protected:
 	Base::Property<std::string> prop_title;
 
 	/// Property: display/hide coordinate system.
-	Base::Property<bool> prop_coordinate_system;
+	Base::Property<bool> prop_scene_coordinate_system;
 
     /// Property: scale of coordinate system.
     Base::Property<float> prop_coordinate_system_scale;
 
 	/// Flag indicating whether coordinate system is already displayed or not.
-	bool coordinate_system_status_flag;
+	bool scene_coordinate_system_status_flag;
 
 
 	/// Property: background color. As default it is set to 1 row with 0, 0, 0 (black).
@@ -154,23 +158,32 @@ protected:
 	/// Property: level denoting display only every level'th point (default: 1, 100 COUSES ERROR).
 	Base::Property<int> prop_xyznormals_level;
 
-	/// Display/hide XYZ cloud.
-	Base::Property<bool> prop_display_xyz;
 
-	/// Display/hide XYZRGB clouds.
-	Base::Property<bool> prop_display_xyzrgb;
+	/// Display/hide scene XYZ cloud.
+	Base::Property<bool> prop_display_scene_xyz;
 
-	/// Display/hide XYZNormals cloud.
-	Base::Property<bool> prop_display_xyznormals;
+	/// Display/hide scene XYZRGB clouds.
+	Base::Property<bool> prop_display_scene_xyzrgb;
 
-	/// Display/hide XYZSIFT clouds.
-	Base::Property<bool> prop_display_xyzsift;
+	/// Display/hide scene XYZNormals cloud.
+	Base::Property<bool> prop_display_scene_xyznormals;
 
-	/// Display/hide XYZRGB clouds.
-	Base::Property<bool> prop_display_scene;
+	/// Display/hide scene XYZSIFT clouds.
+	Base::Property<bool> prop_display_scene_xyzsift;
 
-	/// Display/hide XYZRGB clouds.
-	Base::Property<bool> prop_display_objects;
+
+	/// Display/hide object XYZ cloud.
+	Base::Property<bool> prop_display_objects_xyz;
+
+	/// Display/hide object XYZRGB clouds.
+	Base::Property<bool> prop_display_objects_xyzrgb;
+
+	/// Display/hide object XYZNormals cloud.
+	Base::Property<bool> prop_display_objects_xyznormals;
+
+	/// Display/hide object XYZSIFT clouds.
+	Base::Property<bool> prop_display_objects_xyzsift;
+
 
 	/// Display/hide object/model names.
 	Base::Property<bool> prop_display_object_labels;
@@ -180,6 +193,9 @@ protected:
 
 	/// Display/hide object bounding boxes.
 	Base::Property<bool> prop_display_objects_scene_correspondences;
+
+	/// Display/hide object coordinate systems.
+	Base::Property<bool> prop_display_object_coordinate_systems;
 
 
 	/// Property: color of SIFT points. As default it is set to 1 row with 255, 0, 0 (red).
@@ -216,8 +232,9 @@ protected:
 	/// Value indicating how many models-scene correspondences were previously displayed.
 	unsigned int previous_oms_correspondences_size;
 
-	// Value indicating how many object-scene correspondences were previously displayed.
-	//unsigned int previous_os_correspondences_size;
+	/// Value indicating how many objects/models poses (coordinate systems) were previously displayed.
+	unsigned int previous_om_coordinate_systems_size;
+
 
 	/// Colours of bounding boxes (r,g,b channels normalized to <0,1>).
 	std::vector<double*> colours;
@@ -240,8 +257,9 @@ protected:
 	/// Temporary variables - objects/models-scene correspondences.
 	std::vector<pcl::CorrespondencesPtr> objects_scene_correspondences;
 
-	// Temporary variables - objects-scene correspondences (pairs of: model_ids, model-scene correspondences).
-	//std::vector<std::pair<unsigned int, pcl::CorrespondencesPtr> > objects_scene_correspondences;
+	/// Temporary variables - objects/models poses.
+	std::vector<Types::HomogMatrix> om_poses;
+
 
 	/// Viewer object.
 	pcl::visualization::PCLVisualizer * viewer;

@@ -20,46 +20,59 @@
 namespace Processors {
 namespace CloudViewer {
 
+
 CloudViewer::CloudViewer(const std::string & name) :
 	Base::Component(name),
 	prop_title("title",std::string("Point Cloud Viewer")),
-	prop_coordinate_system("coordinate_system", true),
-    prop_coordinate_system_scale("coordinate_system_scale", 1.0),
+	prop_coordinate_system_scale("coordinate_system_scale", 0.3),
 	prop_background_color("background_color", std::string("0,0,0")),
 	prop_xyznormals_scale("xyznormals.scale", 0.1),
 	prop_xyznormals_level("xyznormals.level", 1),
 	prop_xyzsift_size("xyzsift.size", 1),
 	prop_xyzsift_color("xyzsift.color", std::string("255,0,0")),
 	prop_label_scale("labels.scale", 0.03),
-	prop_display_xyz("display.xyz", true),
-	prop_display_xyzrgb("display.xyzrgb", true),
-	prop_display_xyzsift("display.xyzsift", true),
-	prop_display_xyznormals("xyznormals.display", true),
-	prop_display_scene("display.scene", true),
-	prop_display_objects("display.objects", true),
-	prop_display_object_bounding_boxes("display.object_bounding_boxes",true),
-	prop_display_object_labels("display.object_labels", true),
-	prop_display_objects_scene_correspondences("display.objects_scene_correspondences",true),
-    prop_scene_translation_x("scene_translation.x", 0),
-    prop_scene_translation_y("scene_translation.y", 0),
-    prop_scene_translation_z("scene_translation.z", 0)
+	prop_scene_coordinate_system("scene.display_coordinate_system", true),
+	prop_display_scene_xyz("scene.display_xyz", true),
+	prop_display_scene_xyzrgb("scene.display_xyzrgb", true),
+	prop_display_scene_xyzsift("scene.display_xyzsift", true),
+	prop_display_scene_xyznormals("scene.display_xyznormals", true),
+	prop_scene_translation_x("scene.translation.x", 0),
+	prop_scene_translation_y("scene.translation.y", 0),
+	prop_scene_translation_z("scene.translation.z", 0),
+	prop_display_objects_xyz("objects.display_xyz", true),
+	prop_display_objects_xyzrgb("objects.display_xyzrgb", true),
+	prop_display_objects_xyzsift("objects.display_xyzsift", true),
+	prop_display_objects_xyznormals("objects.display_xyznormals", true),
+	prop_display_object_bounding_boxes("objects.display_bounding_boxes",true),
+	prop_display_object_labels("objects.display_labels", true),
+	prop_display_objects_scene_correspondences("objects.display_scene_correspondences",true),
+	prop_display_object_coordinate_systems("objects.display_coordinate_systems",true)
 {
 	// General properties.
 	registerProperty(prop_title);
-	registerProperty(prop_coordinate_system);
     registerProperty(prop_coordinate_system_scale);
 	registerProperty(prop_background_color);
 
-	// Display properties.
-	registerProperty(prop_display_scene);
-	registerProperty(prop_display_objects);
-	registerProperty(prop_display_object_labels);
-	registerProperty(prop_display_xyz);
-	registerProperty(prop_display_xyzrgb);
-	registerProperty(prop_display_xyzsift);
-	registerProperty(prop_display_xyznormals);
+	// Scene properties.
+	registerProperty(prop_scene_coordinate_system);
+	registerProperty(prop_display_scene_xyz);
+	registerProperty(prop_display_scene_xyzrgb);
+	registerProperty(prop_display_scene_xyznormals);
+	registerProperty(prop_display_scene_xyzsift);
+	// Scene translation properties.
+	registerProperty(prop_scene_translation_x);
+	registerProperty(prop_scene_translation_y);
+	registerProperty(prop_scene_translation_z);
+
+	// Objects properties.
+	registerProperty(prop_display_objects_xyz);
+	registerProperty(prop_display_objects_xyzrgb);
+	registerProperty(prop_display_objects_xyznormals);
+	registerProperty(prop_display_objects_xyzsift);
 	registerProperty(prop_display_object_bounding_boxes);
+	registerProperty(prop_display_object_labels);
 	registerProperty(prop_display_objects_scene_correspondences);
+	registerProperty(prop_display_object_coordinate_systems);
 
 	// XYZNormals properties.
 	registerProperty(prop_xyznormals_scale);
@@ -72,10 +85,6 @@ CloudViewer::CloudViewer(const std::string & name) :
 	// Label properties.
 	registerProperty(prop_label_scale);
 
-    // Scene translation properties.
-    registerProperty(prop_scene_translation_x);
-    registerProperty(prop_scene_translation_y);
-    registerProperty(prop_scene_translation_z);
 
 	viewer = NULL;
 }
@@ -125,6 +134,7 @@ void CloudViewer::prepareInterface() {
 	registerStream("in_object_clouds_xyzrgb", &in_object_clouds_xyzrgb);
 	registerStream("in_object_clouds_xyzsift", &in_object_clouds_xyzsift);
 	registerStream("in_object_corners_xyz", &in_object_corners_xyz);
+	registerStream("in_object_poses", &in_object_poses);
 
 	// Register cloud objects/clusters/models-scene correspondences streams.
 	registerStream("in_objects_scene_correspondences", &in_objects_scene_correspondences);
@@ -143,7 +153,7 @@ bool CloudViewer::onInit() {
 	viewer->initCameraParameters();
 
 	// Initialize  coodrinate system flag.
-	coordinate_system_status_flag = !prop_coordinate_system;
+	scene_coordinate_system_status_flag = !prop_scene_coordinate_system;
 
 	// Initialize  previous sizes.
 	previous_om_xyzrgb_size = 0;
@@ -151,8 +161,7 @@ bool CloudViewer::onInit() {
 	previous_om_bb_size = 0;
 	previous_oms_correspondences_size = 0;
 	previous_om_labels_size = 0;
-
-	//previous_os_correspondences_size = 0;
+	previous_om_coordinate_systems_size = 0;
 
 	// Initialize
     scene_cloud_xyzrgb = pcl::PointCloud<pcl::PointXYZRGB>::Ptr (new pcl::PointCloud<pcl::PointXYZRGB>());
@@ -187,9 +196,9 @@ void CloudViewer::refreshViewerState() {
 	viewer->setBackgroundColor(r, g, b);
 
 	// Show/hide coordinate system.
-	CLOG(LDEBUG) << "prop_coordinate_system="<<prop_coordinate_system;
-	if (coordinate_system_status_flag != prop_coordinate_system) {
-		if (prop_coordinate_system) {
+	CLOG(LDEBUG) << "prop_coordinate_system="<<prop_scene_coordinate_system;
+	if (scene_coordinate_system_status_flag != prop_scene_coordinate_system) {
+		if (prop_scene_coordinate_system) {
 			// TODO: Currently only 1.7.1/1.7.2 is available in the 012/031/032 laboratories. Fix for other versions of PCL.
 			//#if PCL_VERSION_COMPARE(>=,1,7,1)
 				viewer->addCoordinateSystem (prop_coordinate_system_scale);
@@ -198,14 +207,11 @@ void CloudViewer::refreshViewerState() {
 		} else {
 				viewer->removeCoordinateSystem ();
 		}//: else
-		coordinate_system_status_flag = prop_coordinate_system;
+		scene_coordinate_system_status_flag = prop_scene_coordinate_system;
 	}
 
-	// TODO: check sizes of om names/clouds!!!
 	// Check whether object names changed - if so, reload all objects, if not - leave unchanged... what about object poses?
 
-//	bool is_fresh_scene_xyzsift = false;
-//	bool is_fresh_om_xyzsift = false;
     bool refresh_correspondences = false;
 
     // Define translation between clouds.
@@ -280,6 +286,10 @@ void CloudViewer::refreshViewerState() {
 
 	}//: if
 
+	if (!in_object_poses.empty()){
+		om_poses = in_object_poses.read();
+		refreshOMCoordinateSystems(om_poses);
+	}//: if
 
 	// Refresh viewer.
 	viewer->spinOnce(100);
@@ -289,7 +299,7 @@ void CloudViewer::refreshViewerState() {
 void CloudViewer::refreshSceneCloudXYZRGB(pcl::PointCloud<pcl::PointXYZRGB>::Ptr scene_cloud_xyzrgb_){
 	CLOG(LTRACE) << "refreshSceneCloudXYZRGB";
 
-	if ((!prop_display_scene)||(!prop_display_xyzrgb)) {
+	if (!prop_display_scene_xyzrgb) {
 		viewer->removePointCloud ("scene_xyzrgb");
 	} else {
 		// Filter the NaN points.
@@ -311,7 +321,7 @@ void CloudViewer::refreshSceneCloudXYZRGB(pcl::PointCloud<pcl::PointXYZRGB>::Ptr
 void CloudViewer::refreshSceneCloudXYZSIFT(pcl::PointCloud<PointXYZSIFT>::Ptr scene_cloud_xyzsift_){
 	CLOG(LTRACE) << "refreshSceneCloudXYZSIFT";
 
-	if ((!prop_display_scene)||(!prop_display_xyzsift)) {
+	if (!prop_display_scene_xyzsift) {
 		viewer->removePointCloud ("scene_xyzsift");
 	} else {
 		// Transform to XYZ cloud.
@@ -341,7 +351,7 @@ void CloudViewer::refreshSceneCloudXYZSIFT(pcl::PointCloud<PointXYZSIFT>::Ptr sc
 void CloudViewer::refreshOMCloudsXYZRGB(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> om_clouds_xyzrgb_) {
 	CLOG(LTRACE) << "refreshOMCloudsXYZRGB";
 
-	if ((!prop_display_xyzrgb)||(!prop_display_objects)) {
+	if (!prop_display_objects_xyzrgb) {
 		// Remove object clouds
 		for(int i=0; i< previous_om_xyzrgb_size; i++) {
 			// cloud name.
@@ -393,7 +403,7 @@ void CloudViewer::refreshOMCloudsXYZRGB(std::vector<pcl::PointCloud<pcl::PointXY
 void CloudViewer::refreshOMCloudsXYZSIFT(std::vector<pcl::PointCloud<PointXYZSIFT>::Ptr> om_clouds_xyzsift_) {
 	CLOG(LTRACE) << "refreshOMCloudsXYZSIFT";
 
-	if ((!prop_display_xyzsift)||(!prop_display_objects)) {
+	if (!prop_display_objects_xyzsift) {
 		// Remove object clouds
 		for(int i=0; i< previous_om_xyzsift_size; i++) {
 			// cloud name.
@@ -617,6 +627,46 @@ void CloudViewer::refreshOMIds(std::vector<std::string>  om_ids_, std::vector<pc
 	}//: else
 
 }
+
+
+void CloudViewer::refreshOMCoordinateSystems(std::vector<Types::HomogMatrix> om_poses_) {
+	CLOG(LTRACE) << "refreshOMCoordinateSystems";
+
+	// Remove previous names.
+	for(int i = 0; i < previous_om_coordinate_systems_size; i++){
+		ostringstream s;
+		s << i;
+		std::string cname = "coordinate_system_" + s.str();
+
+		viewer->removeCoordinateSystem (cname);
+
+	}//: else
+
+	if (prop_display_object_coordinate_systems) {
+
+		// Display correspondences.
+		for (size_t i = 0; i<om_poses_.size(); ++i) {
+			CLOG(LDEBUG) << "Adding " << i << "-th o/m coordinate system";
+
+			// Generate name.
+			std::ostringstream s;
+			s << i;
+			std::string cname = "coordinate_system_" + s.str();
+
+			Eigen::Affine3f pose = om_poses_[i];
+
+			viewer->addCoordinateSystem (prop_coordinate_system_scale, pose, cname);
+		}//: for
+
+		previous_om_coordinate_systems_size = om_poses_.size();
+	} else {
+		previous_om_coordinate_systems_size = 0;
+	}//: else
+
+}
+
+
+
 
 
 void CloudViewer::resizeColourVector(unsigned int size_) {
