@@ -30,7 +30,7 @@ CloudViewer::CloudViewer(const std::string & name) :
 	prop_xyznormals_level("xyznormals.level", 1),
 	prop_xyzsift_size("xyzsift.size", 1),
 	prop_xyzsift_color("xyzsift.color", std::string("255,0,0")),
-	prop_label_scale("labels.scale", 0.1),
+	prop_label_scale("labels.scale", 0.03),
 	prop_display_xyz("display.xyz", true),
 	prop_display_xyzrgb("display.xyzrgb", true),
 	prop_display_xyzsift("display.xyzsift", true),
