@@ -16,6 +16,8 @@
 #include "Property.hpp"
 
 #include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/PolygonMesh.h>
+
 #include <Types/PointXYZSIFT.hpp>
 #include <Types/HomogMatrix.hpp>
 
@@ -94,9 +96,14 @@ protected:
 	/// Input data stream containing vector of XYZSIFT clouds (objects/clusters/models).
 	Base::DataStreamIn <std::vector< pcl::PointCloud<PointXYZSIFT>::Ptr>, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_object_clouds_xyzsift;
 
-	/// Input data stream containing vector of objects/clusters/models corners (each being a cloud containing 8 XYZ points).
-	Base::DataStreamIn <std::vector< pcl::PointCloud<pcl::PointXYZ>::Ptr>, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_object_corners_xyz;
+	/// Input data stream containing vector of objects/clusters/models vertices (used by polygons and boundingboxes).
+	Base::DataStreamIn <std::vector< pcl::PointCloud<pcl::PointXYZ>::Ptr>, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_object_vertices_xyz;
 
+	/// Input data stream containing vector of objects/clusters/models meshes - build on top of vertices.
+	Base::DataStreamIn <std::vector< std::vector<pcl::Vertices> >, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_object_triangles;
+
+	/// Input data stream containing vector of objects/clusters/models bounding boxes - build on top of vertices.
+	Base::DataStreamIn <std::vector<std::vector<pcl::Vertices> >, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_object_bounding_boxes;
 
 	/// Input data stream containing vector of corespondences beetwen objects/clusters/models and scene clouds.
 	Base::DataStreamIn<std::vector<pcl::CorrespondencesPtr>, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_objects_scene_correspondences;
@@ -121,13 +128,16 @@ protected:
 	void refreshOMCloudsXYZSIFT(std::vector<pcl::PointCloud<PointXYZSIFT>::Ptr> om_clouds_xyzsift_);
 
 	/// Displays or hides object/models bounding boxes.
-	void refreshOMBoundingBoxesFromCorners(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>  om_corners_xyz_);
+	void refreshOMBoundingBoxes(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>  om_vertices_xyz_, const std::vector< std::vector<pcl::Vertices> > & om_lines_);
+
+	/// Displays or hides object/models meshes.
+	void refreshOMMeshes(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>  om_vertices_xyz_, const std::vector< std::vector<pcl::Vertices> > & om_triangles_);
 
 	/// Displays or hides models-scene correspondences.
 	void refreshModelsSceneCorrespondences(std::vector<pcl::CorrespondencesPtr> models_scene_correspondences_, pcl::PointCloud<PointXYZSIFT>::Ptr scene_cloud_xyzsift_, std::vector<pcl::PointCloud<PointXYZSIFT>::Ptr> om_clouds_xyzsift_);
 
 	/// Displays or hides object/models bounding boxes.
-	void refreshOMIds(std::vector<std::string>  om_ids_, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>  om_corners_xyz_);
+	void refreshOMNames(std::vector<std::string>  om_ids_, std::vector<Types::HomogMatrix> om_poses_);
 
 	/// Displays or hides object/models coordinate systems.
 	void refreshOMCoordinateSystems(std::vector<Types::HomogMatrix> om_poses_);
@@ -191,6 +201,9 @@ protected:
 	/// Display/hide object bounding boxes.
 	Base::Property<bool> prop_display_object_bounding_boxes;
 
+	/// Display/hide object meshes.
+	Base::Property<bool> prop_display_object_meshes;
+
 	/// Display/hide object bounding boxes.
 	Base::Property<bool> prop_display_objects_scene_correspondences;
 
@@ -226,6 +239,9 @@ protected:
 	/// Value indicating how many objects/models bounding boxes were previously displayed.
 	unsigned int previous_om_bb_size;
 
+	/// Value indicating how many objects/models meshes were previously displayed.
+	unsigned int previous_om_meshes_size;
+
 	/// Value indicating how many objects/models names were previously displayed.
 	unsigned int previous_om_labels_size;
 
@@ -251,14 +267,14 @@ protected:
 	/// Temporary variables - object/models XYSIFT clouds.
 	std::vector<pcl::PointCloud<PointXYZSIFT>::Ptr> object_clouds_xyzsift;
 
-	/// Temporary variables - clouds containing object/models corners.
-	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> object_corners_xyz;
+	/// Temporary variables - clouds containing object/models vertices.
+	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> object_vertices_xyz;
 
 	/// Temporary variables - objects/models-scene correspondences.
 	std::vector<pcl::CorrespondencesPtr> objects_scene_correspondences;
 
 	/// Temporary variables - objects/models poses.
-	std::vector<Types::HomogMatrix> om_poses;
+	std::vector<Types::HomogMatrix> object_poses;
 
 
 	/// Viewer object.

@@ -44,6 +44,7 @@ CloudViewer::CloudViewer(const std::string & name) :
 	prop_display_objects_xyzsift("objects.display_xyzsift", true),
 	prop_display_objects_xyznormals("objects.display_xyznormals", true),
 	prop_display_object_bounding_boxes("objects.display_bounding_boxes",true),
+	prop_display_object_meshes("objects.display_meshes",true),
 	prop_display_object_labels("objects.display_labels", true),
 	prop_display_objects_scene_correspondences("objects.display_scene_correspondences",true),
 	prop_display_object_coordinate_systems("objects.display_coordinate_systems",true)
@@ -70,6 +71,7 @@ CloudViewer::CloudViewer(const std::string & name) :
 	registerProperty(prop_display_objects_xyznormals);
 	registerProperty(prop_display_objects_xyzsift);
 	registerProperty(prop_display_object_bounding_boxes);
+	registerProperty(prop_display_object_meshes);
 	registerProperty(prop_display_object_labels);
 	registerProperty(prop_display_objects_scene_correspondences);
 	registerProperty(prop_display_object_coordinate_systems);
@@ -133,7 +135,9 @@ void CloudViewer::prepareInterface() {
 	registerStream("in_object_labels", &in_object_labels);
 	registerStream("in_object_clouds_xyzrgb", &in_object_clouds_xyzrgb);
 	registerStream("in_object_clouds_xyzsift", &in_object_clouds_xyzsift);
-	registerStream("in_object_corners_xyz", &in_object_corners_xyz);
+	registerStream("in_object_vertices_xyz", &in_object_vertices_xyz);
+	registerStream("in_object_triangles", &in_object_triangles);
+	registerStream("in_object_bounding_boxes", &in_object_bounding_boxes);
 	registerStream("in_object_poses", &in_object_poses);
 
 	// Register cloud objects/clusters/models-scene correspondences streams.
@@ -159,6 +163,7 @@ bool CloudViewer::onInit() {
 	previous_om_xyzrgb_size = 0;
 	previous_om_xyzsift_size = 0;
 	previous_om_bb_size = 0;
+	previous_om_meshes_size = 0;
 	previous_oms_correspondences_size = 0;
 	previous_om_labels_size = 0;
 	previous_om_coordinate_systems_size = 0;
@@ -212,7 +217,8 @@ void CloudViewer::refreshViewerState() {
 
 	// Check whether object names changed - if so, reload all objects, if not - leave unchanged... what about object poses?
 
-    bool refresh_correspondences = false;
+	bool fresh_scene = false;
+	bool fresh_objects = false;
 
     // Define translation between clouds.
     Eigen::Matrix4f trans = Eigen::Matrix4f::Identity();
@@ -234,7 +240,7 @@ void CloudViewer::refreshViewerState() {
 		//is_fresh_scene_xyzsift = true;
         pcl::transformPointCloud(*scene_cloud_xyzsift_tmp, *scene_cloud_xyzsift, trans);
         refreshSceneCloudXYZSIFT(scene_cloud_xyzsift);
-        refresh_correspondences = true;
+		fresh_scene = true;
 	}//: if
 
 
@@ -242,6 +248,7 @@ void CloudViewer::refreshViewerState() {
 	if (!in_object_clouds_xyzrgb.empty()){
 			object_clouds_xyzrgb = in_object_clouds_xyzrgb.read();
 			refreshOMCloudsXYZRGB(object_clouds_xyzrgb);
+
 	}//: if
 
 	// Read om XYZSIFT clouds from port.
@@ -249,46 +256,61 @@ void CloudViewer::refreshViewerState() {
 			object_clouds_xyzsift = in_object_clouds_xyzsift.read();
 			refreshOMCloudsXYZSIFT(object_clouds_xyzsift);
 			//is_fresh_om_xyzsift = true;
-            refresh_correspondences = true;
+			fresh_objects = true;
     }//: if
 
-	// Read om bounding boxes from port.
-	if (!in_object_corners_xyz.empty()){
-			object_corners_xyz = in_object_corners_xyz.read();
-			refreshOMBoundingBoxesFromCorners(object_corners_xyz);
+	// Read om vertices from port.
+	if (!in_object_vertices_xyz.empty()){
+		object_vertices_xyz = in_object_vertices_xyz.read();
+
+		// Read om bounding boxes from port.
+		if (!in_object_bounding_boxes.empty()){
+				refreshOMBoundingBoxes(object_vertices_xyz, in_object_bounding_boxes.read());
+		}//: if
+
+		// Read om meshes from port.
+		if (!in_object_triangles.empty()){
+				refreshOMMeshes(object_vertices_xyz, in_object_triangles.read());
+		}//: if
 	}//: if
+
+
 
 	// Read models-scene correspondences from port.
     if (!in_objects_scene_correspondences.empty()){
-        objects_scene_correspondences = in_objects_scene_correspondences.read();
-        refresh_correspondences = true;
+
+		if (scene_cloud_xyzsift->empty()) {
+			CLOG(LWARNING) << "Cannot display correspondences as scene_cloud_xyzsift is empty";
+		} else if (object_clouds_xyzsift.empty()) {
+			CLOG(LWARNING) << "Cannot display correspondences as om_clouds_xyzsift is empty";
+		} else if (!fresh_scene) {
+			CLOG(LWARNING) << "Cannot display correspondences as scene_cloud_xyzsift is old";
+		} else if (!fresh_objects) {
+			CLOG(LWARNING) << "Cannot display correspondences as om_clouds_xyzsift is old";
+		} else {
+				objects_scene_correspondences = in_objects_scene_correspondences.read();
+				if (objects_scene_correspondences.empty())
+					CLOG(LWARNING) << "Cannot display correspondences as objects_scene_correspondences is empty";
+				else
+					refreshModelsSceneCorrespondences(objects_scene_correspondences, scene_cloud_xyzsift, object_clouds_xyzsift);
+		} //: else
+
     }//: if
 
-    if (refresh_correspondences){ // && is_fresh_scene_xyzsift && is_fresh_om_xyzsift){
-			if (scene_cloud_xyzsift->empty()) {
-				CLOG(LERROR) << "Cannot display correspondences as scene_cloud_xyzsift is empty";
-			} else if (object_clouds_xyzsift.empty()) {
-				CLOG(LERROR) << "Cannot display correspondences as om_clouds_xyzsift is empty";
-            } else if (objects_scene_correspondences.empty()) {
-                CLOG(LERROR) << "Cannot display correspondences as objects_scene_correspondences is empty";
-            } else {
-				refreshModelsSceneCorrespondences(objects_scene_correspondences, scene_cloud_xyzsift, object_clouds_xyzsift);
-			}//: else
+	// Read object poses.
+	if (!in_object_poses.empty()){
+		object_poses = in_object_poses.read();
+		refreshOMCoordinateSystems(object_poses);
 	}//: if
 
 	// Read object/models names from port.
 	if (!in_object_labels.empty()){
-		if (object_corners_xyz.empty()) {
-			CLOG(LERROR) << "Cannot display object ids as om_corners_xyz is empty";
+		if (object_poses.empty()) {
+			CLOG(LWARNING) << "Cannot display object ids as object poses are unknown!";
 		} else {
-			refreshOMIds(in_object_labels.read(), object_corners_xyz);
+			refreshOMNames(in_object_labels.read(), object_poses);
 		}//: else
 
-	}//: if
-
-	if (!in_object_poses.empty()){
-		om_poses = in_object_poses.read();
-		refreshOMCoordinateSystems(om_poses);
 	}//: if
 
 	// Refresh viewer.
@@ -466,65 +488,103 @@ void CloudViewer::refreshOMCloudsXYZSIFT(std::vector<pcl::PointCloud<PointXYZSIF
 }
 
 
-void CloudViewer::refreshOMBoundingBoxesFromCorners(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>  om_corners_xyz_) {
-	CLOG(LTRACE) << "refreshOMBoundingBoxesFromCorners";
+void CloudViewer::refreshOMBoundingBoxes(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>  om_vertices_xyz_, const std::vector< std::vector<pcl::Vertices> > & om_lines_) {
+	CLOG(LTRACE) << "refreshOMBoundingBoxes";
 
 	// Remove bounding boxes objects - performed always! TODO FIX!
 	for(int i=0; i< previous_om_bb_size; i++) {
 		// Generate given object BB name prefix.
 		std::ostringstream s;
 		s << i;
-		std::string cname = "bounding_line_" + s.str()+"_";
+		std::string cname = "bounding_line_" + s.str();
 		// Remove lines one by one.
-		viewer->removeShape(cname + std::string("01"));
-		viewer->removeShape(cname + std::string("12"));
-		viewer->removeShape(cname + std::string("23"));
-		viewer->removeShape(cname + std::string("30"));
-		viewer->removeShape(cname + std::string("04"));
-		viewer->removeShape(cname + std::string("15"));
-		viewer->removeShape(cname + std::string("26"));
-		viewer->removeShape(cname + std::string("37"));
-		viewer->removeShape(cname + std::string("45"));
-		viewer->removeShape(cname + std::string("56"));
-		viewer->removeShape(cname + std::string("67"));
-		viewer->removeShape(cname + std::string("74"));
+		viewer->removeShape(cname);
 	}//: for
 
 	if (prop_display_object_bounding_boxes) {
 
 		// Generate colour vector for MAX of om clouds (sifts, corners, correspondences,names).
-		resizeColourVector(om_corners_xyz_.size());
+		resizeColourVector(om_lines_.size());
 
-		for(int i=0; i< om_corners_xyz_.size(); i++) {
-			// Generate given object BB name prefix.
-			std::ostringstream s;
-			s << i;
-			std::string cname = "bounding_line_" + s.str()+"_";
+		int bb_size = 0;
+		for(size_t i=0; i< om_lines_.size(); i++) {
 			// Get colour from list.
 			double r = colours[i][0];
 			double g = colours[i][1];
 			double b = colours[i][2];
 
-			// Remove lines one by one.
-			viewer->addLine(om_corners_xyz_[i]->at(0), om_corners_xyz_[i]->at(1), r, g, b, cname + std::string("01"));
-			viewer->addLine(om_corners_xyz_[i]->at(1), om_corners_xyz_[i]->at(2), r, g, b, cname + std::string("12"));
-			viewer->addLine(om_corners_xyz_[i]->at(2), om_corners_xyz_[i]->at(3), r, g, b, cname + std::string("23"));
-			viewer->addLine(om_corners_xyz_[i]->at(3), om_corners_xyz_[i]->at(0), r, g, b, cname + std::string("30"));
-			viewer->addLine(om_corners_xyz_[i]->at(0), om_corners_xyz_[i]->at(4), r, g, b, cname + std::string("04"));
-			viewer->addLine(om_corners_xyz_[i]->at(1), om_corners_xyz_[i]->at(5), r, g, b, cname + std::string("15"));
-			viewer->addLine(om_corners_xyz_[i]->at(2), om_corners_xyz_[i]->at(6), r, g, b, cname + std::string("26"));
-			viewer->addLine(om_corners_xyz_[i]->at(3), om_corners_xyz_[i]->at(7), r, g, b, cname + std::string("37"));
-			viewer->addLine(om_corners_xyz_[i]->at(4), om_corners_xyz_[i]->at(5), r, g, b, cname + std::string("45"));
-			viewer->addLine(om_corners_xyz_[i]->at(5), om_corners_xyz_[i]->at(6), r, g, b, cname + std::string("56"));
-			viewer->addLine(om_corners_xyz_[i]->at(6), om_corners_xyz_[i]->at(7), r, g, b, cname + std::string("67"));
-			viewer->addLine(om_corners_xyz_[i]->at(7), om_corners_xyz_[i]->at(4), r, g, b, cname + std::string("74"));
+			// Get lines for given om.
+			std::vector<pcl::Vertices> lines = om_lines_[i];
+			for(size_t j=0; j< lines.size(); j++,bb_size++) {
+				// Generate given object BB name prefix.
+				std::ostringstream s;
+				s << bb_size;
+				std::string cname = "bounding_line_" + s.str();
+				// Get indices of vertices.
+				int v1 = lines[j].vertices[0];
+				int v2 = lines[j].vertices[1];
+
+				// Add lines one by one.
+				viewer->addLine(om_vertices_xyz_[i]->at(v1), om_vertices_xyz_[i]->at(v2), r, g, b, cname);
+			}//: for
+
 		}//: for
 
-		previous_om_bb_size = om_corners_xyz_.size();
+		previous_om_bb_size = bb_size;
 	} else {
 		previous_om_bb_size = 0;
 	}//: else
 }
+
+
+void CloudViewer::refreshOMMeshes(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>  om_vertices_xyz_, const std::vector< std::vector<pcl::Vertices> > & om_triangles_) {
+	CLOG(LTRACE) << "refreshOMMeshes";
+
+	// Remove meshes objects - performed always! TODO FIX!
+	for(int i=0; i< previous_om_meshes_size; i++) {
+		// Generate given object mesh name prefix.
+		std::ostringstream s;
+		s << i;
+		std::string cname = "mesh_" + s.str();
+		// Remove meshes one by one.
+		viewer->removeShape(cname);
+	}//: for
+
+	if (prop_display_object_meshes) {
+
+		// Generate colour vector for MAX of om clouds (sifts, corners, meshes, correspondences,names).
+		resizeColourVector(om_triangles_.size());
+
+		for(int i=0; i< om_triangles_.size(); i++) {
+			// Generate given object mesh name prefix.
+			std::ostringstream s;
+			s << i;
+			std::string cname = "mesh_" + s.str();
+			// Get colour from list.
+			double r = colours[i][0];
+			double g = colours[i][1];
+			double b = colours[i][2];
+			// And? TODO!
+
+			// Create mesh object.
+			pcl::PolygonMesh::Ptr mesh (new pcl::PolygonMesh);
+			// mesh_ptr_->polygons[triangle_number].vertices[point_number];
+			// Set mesh vertices.
+			pcl::toPCLPointCloud2(*om_vertices_xyz_[i], mesh->cloud);
+			// Set mesh polygon.
+			mesh->polygons = om_triangles_[i];
+
+
+			// Remove lines one by one.
+			viewer->addPolygonMesh(*mesh, cname);
+		}//: for
+
+		previous_om_meshes_size = om_triangles_.size();
+	} else {
+		previous_om_meshes_size = 0;
+	}//: else
+}
+
 
 
 
@@ -576,7 +636,7 @@ void CloudViewer::refreshModelsSceneCorrespondences(std::vector<pcl::Corresponde
 	}//: else
 }
 
-void CloudViewer::refreshOMIds(std::vector<std::string>  om_ids_, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>  om_corners_xyz_) {
+void CloudViewer::refreshOMNames(std::vector<std::string>  om_ids_, std::vector<Types::HomogMatrix> om_poses_) {
 	CLOG(LTRACE) << "refreshOMNames";
 
 	// Remove previous names.
@@ -610,15 +670,21 @@ void CloudViewer::refreshOMIds(std::vector<std::string>  om_ids_, std::vector<pc
 			double b = colours[i][2];
 
 			// Create and accumulate points
-			pcl::CentroidPoint<pcl::PointXYZ> centroid;
+/*			pcl::CentroidPoint<pcl::PointXYZ> centroid;
 			for (size_t j = 0; j < 8; ++j) {
 				centroid.add( om_corners_xyz_[i]->at(j) );
 			}//: for
 			// Fetch centroid using `get()`
 			pcl::PointXYZ om_center;
-			centroid.get (om_center);
+			centroid.get (om_center);*/
 
-			viewer->addText3D ( om_id, om_center, prop_label_scale, r, g, b, cname);
+			if (i < om_poses_.size() ) {
+				Eigen::Matrix<double, 4, 4> mat = om_poses_[i].matrix();
+				pcl::PointXYZ om_center (mat(0,3), mat(1,3), mat(2,3));
+				viewer->addText3D ( om_id, om_center, prop_label_scale, r, g, b, cname);
+			} else {
+				CLOG(LERROR) << "Cannot display "<<i<<"-th label as object pose is unknown";
+			}//: else
 		}//: for
 
 		previous_om_labels_size = om_ids_.size();
