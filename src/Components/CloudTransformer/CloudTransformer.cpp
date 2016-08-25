@@ -33,23 +33,27 @@ void CloudTransformer::prepareInterface() {
 	registerStream("in_cloud_xyzrgb", &in_cloud_xyzrgb);
 	registerStream("in_cloud_xyzsift", &in_cloud_xyzsift);
 	registerStream("in_cloud_xyzshot", &in_cloud_xyzshot);
+	registerStream("in_cloud_xyzkaze", &in_cloud_xyzkaze);
 	registerStream("in_hm", &in_hm);
 
     registerStream("in_clouds_xyz", &in_clouds_xyz);
     registerStream("in_clouds_xyzrgb", &in_clouds_xyzrgb);
     registerStream("in_clouds_xyzsift", &in_clouds_xyzsift);
     registerStream("in_clouds_xyzshot", &in_clouds_xyzshot);
+    registerStream("in_clouds_xyzkaze", &in_clouds_xyzkaze);
     registerStream("in_hms", &in_hms);
 
     registerStream("out_cloud_xyz", &out_cloud_xyz);
     registerStream("out_cloud_xyzrgb", &out_cloud_xyzrgb);
     registerStream("out_cloud_xyzsift", &out_cloud_xyzsift);
     registerStream("out_cloud_xyzshot", &out_cloud_xyzshot);
+	registerStream("out_cloud_xyzkaze", &out_cloud_xyzkaze);
 
     registerStream("out_clouds_xyz", &out_clouds_xyz);
     registerStream("out_clouds_xyzrgb", &out_clouds_xyzrgb);
     registerStream("out_clouds_xyzsift", &out_clouds_xyzsift);
     registerStream("out_clouds_xyzshot", &out_clouds_xyzshot);
+    registerStream("out_clouds_xyzkaze", &out_clouds_xyzkaze);
 
 	// Register handlers
 	registerHandler("transform_clouds", boost::bind(&CloudTransformer::transform_clouds, this));
@@ -103,6 +107,10 @@ void CloudTransformer::transform_clouds() {
     if(!in_cloud_xyzshot.empty())
     	transform_xyzshot(hm);
 
+    // Try to transform XYZKAZE.
+    if(!in_cloud_xyzkaze.empty())
+    	transform_xyzkaze(hm);
+
     //Transform all clouds i vector by one transformation
 
     // Try to transform vector XYZ.
@@ -131,6 +139,13 @@ void CloudTransformer::transform_clouds() {
         vector<Types::HomogMatrix> hms;
         hms.push_back(hm);
         transform_vector_xyzshot(hms);
+    }
+    
+    // Try to transform vector XYZKAZE.
+    if(!in_clouds_xyzkaze.empty()){
+        vector<Types::HomogMatrix> hms;
+        hms.push_back(hm);
+        transform_vector_xyzkaze(hms);
     }
 }
 
@@ -162,6 +177,10 @@ void CloudTransformer::transform_vector_of_clouds() {
     // Try to transform XYZSHOT.
     if(!in_clouds_xyzshot.empty())
         transform_vector_xyzshot(hms);
+        
+    // Try to transform XYZKAZE.
+    if(!in_clouds_xyzkaze.empty())
+        transform_vector_xyzkaze(hms);
 }
 
 
@@ -229,6 +248,21 @@ void CloudTransformer::transform_xyzshot(Types::HomogMatrix hm_) {
 	}
 }
 
+void CloudTransformer::transform_xyzkaze(Types::HomogMatrix hm_) {
+	CLOG(LTRACE) << "transform_xyzkaze()";
+	// Reads clouds.
+	pcl::PointCloud<PointXYZKAZE>::Ptr cloud = in_cloud_xyzkaze.read();
+	pcl::PointCloud<PointXYZKAZE>::Ptr cloud2(new pcl::PointCloud<PointXYZKAZE>());
+
+	if (!pass_through) {
+		// Transform cloud.
+		pcl::transformPointCloud(*cloud, *cloud2, hm_) ;
+		out_cloud_xyzkaze.write(cloud2);
+	} else {
+		// Return input cloud.
+		out_cloud_xyzkaze.write(cloud);
+	}
+}
 
 void CloudTransformer::transform_vector_xyz(vector<Types::HomogMatrix> hms_) {
     CLOG(LTRACE) << "transform_vector_xyz()";
@@ -327,6 +361,31 @@ void CloudTransformer::transform_vector_xyzshot(vector<Types::HomogMatrix> hms_)
     } else {
         // Return input cloud.
         out_clouds_xyzshot.write(clouds);
+    }
+}
+
+void CloudTransformer::transform_vector_xyzkaze(vector<Types::HomogMatrix> hms_) {
+    CLOG(LTRACE) << "transform_vector_xyzkaze()";
+    // Reads clouds.
+    vector<pcl::PointCloud<PointXYZKAZE>::Ptr> clouds = in_clouds_xyzkaze.read();
+    vector<pcl::PointCloud<PointXYZKAZE>::Ptr> clouds2;
+
+    if (!pass_through) {
+        if(hms_.size() < clouds.size())
+            CLOG(LDEBUG) << "hms_.size() = " << hms_.size() << " clouds.size()= " << clouds.size();
+        while(hms_.size() < clouds.size()){
+            hms_.push_back(hms_[0]);
+        }
+        // Transform clouds.
+        for(int i = 0; i < hms_.size(); i++){
+            pcl::PointCloud<PointXYZKAZE>::Ptr cloud_tmp(new pcl::PointCloud<PointXYZKAZE>());
+            pcl::transformPointCloud(*clouds[i], *cloud_tmp, hms_[i]);
+            clouds2.push_back(cloud_tmp);
+        }
+        out_clouds_xyzkaze.write(clouds2);
+    } else {
+        // Return input cloud.
+        out_clouds_xyzkaze.write(clouds);
     }
 }
 

@@ -19,6 +19,7 @@
 #include <pcl/PolygonMesh.h>
 
 #include <Types/PointXYZSIFT.hpp>
+#include <Types/PointXYZKAZE.hpp>
 #include <Types/HomogMatrix.hpp>
 
 
@@ -83,6 +84,9 @@ protected:
 	/// Data stream with cloud of XYZ SIFTs.
 	Base::DataStreamIn<pcl::PointCloud<PointXYZSIFT>::Ptr, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_cloud_xyzsift;
 
+	/// Data stream with cloud of XYZ KAZEs.
+	Base::DataStreamIn<pcl::PointCloud<PointXYZKAZE>::Ptr, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_cloud_xyzkaze;
+
 	// Data stream with cloud of XYZRGB points with normals.
 	//Base::DataStreamIn< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_cloud_xyzrgb_normals;
 
@@ -95,6 +99,10 @@ protected:
 
 	/// Input data stream containing vector of XYZSIFT clouds (objects/clusters/models).
 	Base::DataStreamIn <std::vector< pcl::PointCloud<PointXYZSIFT>::Ptr>, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_object_clouds_xyzsift;
+	
+		/// Input data stream containing vector of XYZKAZE clouds (objects/clusters/models).
+	Base::DataStreamIn <std::vector< pcl::PointCloud<PointXYZKAZE>::Ptr>, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_object_clouds_xyzkaze;
+	
 
 	/// Input data stream containing vector of objects/clusters/models vertices (used by polygons and boundingboxes).
 	Base::DataStreamIn <std::vector< pcl::PointCloud<pcl::PointXYZ>::Ptr>, Base::DataStreamBuffer::Newest, Base::Synchronization::Mutex> in_object_vertices_xyz;
@@ -121,11 +129,17 @@ protected:
 	/// Displays or hides XYZSIFT scene cloud.
 	void refreshSceneCloudXYZSIFT(pcl::PointCloud<PointXYZSIFT>::Ptr scene_cloud_xyzsift_);
 
+	/// Displays or hides XYZKAZE scene cloud.
+	void refreshSceneCloudXYZKAZE(pcl::PointCloud<PointXYZKAZE>::Ptr scene_cloud_xyzkaze_);
+
 	/// Displays or hides XYZRGB object/model clouds.
 	void refreshOMCloudsXYZRGB(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> om_clouds_xyzrgb_);
 
 	/// Displays or hides XYZSIFT object/model clouds.
 	void refreshOMCloudsXYZSIFT(std::vector<pcl::PointCloud<PointXYZSIFT>::Ptr> om_clouds_xyzsift_);
+
+	/// Displays or hides XYZSIFT object/model clouds.
+	void refreshOMCloudsXYZKAZE(std::vector<pcl::PointCloud<PointXYZKAZE>::Ptr> om_clouds_xyzkaze_);
 
 	/// Displays or hides object/models bounding boxes.
 	void refreshOMBoundingBoxes(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>  om_vertices_xyz_, const std::vector< std::vector<pcl::Vertices> > & om_lines_);
@@ -181,6 +195,8 @@ protected:
 	/// Display/hide scene XYZSIFT clouds.
 	Base::Property<bool> prop_display_scene_xyzsift;
 
+	/// Display/hide scene XYZKAZE clouds.
+	Base::Property<bool> prop_display_scene_xyzkaze;
 
 	/// Display/hide object XYZ cloud.
 	Base::Property<bool> prop_display_objects_xyz;
@@ -194,6 +210,8 @@ protected:
 	/// Display/hide object XYZSIFT clouds.
 	Base::Property<bool> prop_display_objects_xyzsift;
 
+	/// Display/hide object XYZKAZE clouds.
+	Base::Property<bool> prop_display_objects_xyzkaze;
 
 	/// Display/hide object/model names.
 	Base::Property<bool> prop_display_object_labels;
@@ -217,6 +235,12 @@ protected:
 	/// Property: size of SIFT points. As default it is set to 1.
 	Base::Property<float> prop_xyzsift_size;
 
+	/// Property: color of KAZE points. As default it is set to 1 row with 0, 255, 0 (green).
+	Base::Property<std::string> prop_xyzkaze_color;
+
+	/// Property: size of KAZE points. As default it is set to 1.
+	Base::Property<float> prop_xyzkaze_size;
+
 	/// Property: size of object/model label.
 	Base::Property<float> prop_label_scale;
 
@@ -235,6 +259,9 @@ protected:
 
 	/// Value indicating how many XYZSIFT objects/models were previously displayed.
 	unsigned int previous_om_xyzsift_size;
+
+	/// Value indicating how many XYZKAZE objects/models were previously displayed.
+	unsigned int previous_om_xyzkaze_size;
 
 	/// Value indicating how many objects/models bounding boxes were previously displayed.
 	unsigned int previous_om_bb_size;
@@ -261,11 +288,17 @@ protected:
 	/// Temporary variables - scene XYZSIFT cloud.
 	pcl::PointCloud<PointXYZSIFT>::Ptr scene_cloud_xyzsift;
 
+	/// Temporary variables - scene XYZKAZE cloud.
+	pcl::PointCloud<PointXYZKAZE>::Ptr scene_cloud_xyzkaze;
+
 	/// Temporary variables - object/models XYZRGB clouds.
 	std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> object_clouds_xyzrgb;
 
 	/// Temporary variables - object/models XYSIFT clouds.
 	std::vector<pcl::PointCloud<PointXYZSIFT>::Ptr> object_clouds_xyzsift;
+	
+	/// Temporary variables - object/models XYKAZE clouds.
+	std::vector<pcl::PointCloud<PointXYZKAZE>::Ptr> object_clouds_xyzkaze;
 
 	/// Temporary variables - clouds containing object/models vertices.
 	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> object_vertices_xyz;

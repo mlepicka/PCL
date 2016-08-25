@@ -44,6 +44,7 @@ void PCDWriter::prepareInterface() {
 	registerStream("in_cloud_xyz", &in_cloud_xyz);
 	registerStream("in_cloud_xyzrgb", &in_cloud_xyzrgb);
 	registerStream("in_cloud_xyzsift", &in_cloud_xyzsift);
+	registerStream("in_cloud_xyzkaze", &in_cloud_xyzsift);
 	registerStream("in_save_cloud_trigger", &in_save_cloud_trigger);
 
 	// Register handlers - save cloud, can be triggered manually (from GUI) or by new data present in trigger dataport.
@@ -105,6 +106,8 @@ void PCDWriter::mainHandler () {
 		Write_xyzrgb();
 	if(!in_cloud_xyzsift.empty())
 		Write_xyzsift();
+	if(!in_cloud_xyzkaze.empty())
+		Write_xyzkaze();
 }
 
 
@@ -169,6 +172,17 @@ void PCDWriter::Write_xyzsift() {
 		CLOG(LWARNING) << "Cloud contains no XYZSIFT points, thus save to file skipped";
 }
 
+void PCDWriter::Write_xyzkaze() {
+	CLOG(LTRACE) << "Write_xyzkaze";
+	pcl::PointCloud<PointXYZKAZE>::Ptr cloud = in_cloud_xyzkaze.read();
+
+	if (cloud->points.size() != 0) {
+		std::string fn = prepareName("_xyzkaze.pcd");
+		pcl::io::savePCDFile (fn, *cloud, binary);
+		CLOG(LNOTICE) << "Saved " << cloud->points.size () << " XYZKAZE points to "<< fn << std::endl;
+	} else
+		CLOG(LWARNING) << "Cloud contains no XYZKAZE points, thus save to file skipped";
+}
 
 } //: namespace PCDWrite
 } //: namespace Processors

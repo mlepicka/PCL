@@ -30,11 +30,14 @@ CloudViewer::CloudViewer(const std::string & name) :
 	prop_xyznormals_level("xyznormals.level", 1),
 	prop_xyzsift_size("xyzsift.size", 1),
 	prop_xyzsift_color("xyzsift.color", std::string("255,0,0")),
+	prop_xyzkaze_size("xyzkaze.size", 1),
+	prop_xyzkaze_color("xyzkaze.color", std::string("0,255,0")),
 	prop_label_scale("labels.scale", 0.03),
 	prop_scene_coordinate_system("scene.display_coordinate_system", true),
 	prop_display_scene_xyz("scene.display_xyz", true),
 	prop_display_scene_xyzrgb("scene.display_xyzrgb", true),
 	prop_display_scene_xyzsift("scene.display_xyzsift", true),
+	prop_display_scene_xyzkaze("scene.display_xyzkaze", true),
 	prop_display_scene_xyznormals("scene.display_xyznormals", true),
 	prop_scene_translation_x("scene.translation.x", 0),
 	prop_scene_translation_y("scene.translation.y", 0),
@@ -42,6 +45,7 @@ CloudViewer::CloudViewer(const std::string & name) :
 	prop_display_objects_xyz("objects.display_xyz", true),
 	prop_display_objects_xyzrgb("objects.display_xyzrgb", true),
 	prop_display_objects_xyzsift("objects.display_xyzsift", true),
+	prop_display_objects_xyzkaze("objects.display_xyzkaze", true),
 	prop_display_objects_xyznormals("objects.display_xyznormals", true),
 	prop_display_object_bounding_boxes("objects.display_bounding_boxes",true),
 	prop_display_object_meshes("objects.display_meshes",true),
@@ -70,6 +74,7 @@ CloudViewer::CloudViewer(const std::string & name) :
 	registerProperty(prop_display_objects_xyzrgb);
 	registerProperty(prop_display_objects_xyznormals);
 	registerProperty(prop_display_objects_xyzsift);
+	registerProperty(prop_display_objects_xyzkaze);
 	registerProperty(prop_display_object_bounding_boxes);
 	registerProperty(prop_display_object_meshes);
 	registerProperty(prop_display_object_labels);
@@ -83,6 +88,10 @@ CloudViewer::CloudViewer(const std::string & name) :
 	// XYZSIFT properties.
 	registerProperty(prop_xyzsift_size);
 	registerProperty(prop_xyzsift_color);
+
+	// XYZKAZE properties.
+	registerProperty(prop_xyzkaze_size);
+	registerProperty(prop_xyzkaze_color);
 
 	// Label properties.
 	registerProperty(prop_label_scale);
@@ -123,18 +132,21 @@ void CloudViewer::prepareInterface() {
 	//registerStream("in_cloud_xyz", &in_cloud_xyz);
 	registerStream("in_cloud_xyzrgb", &in_cloud_xyzrgb);
 	registerStream("in_cloud_xyzsift", &in_cloud_xyzsift);
+	registerStream("in_cloud_xyzkaze", &in_cloud_xyzkaze);
 	//registerStream("in_cloud_xyzrgb_normals", &in_cloud_xyzrgb_normals);
 
 	// Register cloud "scene" aliases.
 	//registerStream("in_scene_cloud_xyz", &in_cloud_xyz);
 	registerStream("in_scene_cloud_xyzrgb", &in_cloud_xyzrgb);
 	registerStream("in_scene_cloud_xyzsift", &in_cloud_xyzsift);
+	registerStream("in_scene_cloud_xyzkaze", &in_cloud_xyzkaze);
 	//registerStream("in_scene_cloud_xyzrgb_normals", &in_cloud_xyzrgb_normals);
 
 	// Register cloud objects/clusters/models streams.
 	registerStream("in_object_labels", &in_object_labels);
 	registerStream("in_object_clouds_xyzrgb", &in_object_clouds_xyzrgb);
 	registerStream("in_object_clouds_xyzsift", &in_object_clouds_xyzsift);
+	registerStream("in_object_clouds_xyzkaze", &in_object_clouds_xyzkaze);
 	registerStream("in_object_vertices_xyz", &in_object_vertices_xyz);
 	registerStream("in_object_triangles", &in_object_triangles);
 	registerStream("in_object_bounding_boxes", &in_object_bounding_boxes);
@@ -162,6 +174,7 @@ bool CloudViewer::onInit() {
 	// Initialize  previous sizes.
 	previous_om_xyzrgb_size = 0;
 	previous_om_xyzsift_size = 0;
+	previous_om_xyzkaze_size = 0;
 	previous_om_bb_size = 0;
 	previous_om_meshes_size = 0;
 	previous_oms_correspondences_size = 0;
@@ -171,7 +184,8 @@ bool CloudViewer::onInit() {
 	// Initialize
     scene_cloud_xyzrgb = pcl::PointCloud<pcl::PointXYZRGB>::Ptr (new pcl::PointCloud<pcl::PointXYZRGB>());
     scene_cloud_xyzsift = pcl::PointCloud<PointXYZSIFT>::Ptr (new pcl::PointCloud<PointXYZSIFT>());
-
+    scene_cloud_xyzkaze = pcl::PointCloud<PointXYZKAZE>::Ptr (new pcl::PointCloud<PointXYZKAZE>());
+    
 	return true;
 }
 
@@ -243,6 +257,14 @@ void CloudViewer::refreshViewerState() {
 		fresh_scene = true;
 	}//: if
 
+	// Check scene xyzkaze cloud.
+	if (!in_cloud_xyzkaze.empty()){
+        pcl::PointCloud<PointXYZKAZE>::Ptr scene_cloud_xyzkaze_tmp = in_cloud_xyzkaze.read();
+		//is_fresh_scene_xyzsift = true;
+        pcl::transformPointCloud(*scene_cloud_xyzkaze_tmp, *scene_cloud_xyzkaze, trans);
+        refreshSceneCloudXYZKAZE(scene_cloud_xyzkaze);
+		fresh_scene = true;
+	}//: if
 
 	// Read om XYZRGB clouds from port.
 	if (!in_object_clouds_xyzrgb.empty()){
@@ -255,6 +277,14 @@ void CloudViewer::refreshViewerState() {
 	if (!in_object_clouds_xyzsift.empty()){
 			object_clouds_xyzsift = in_object_clouds_xyzsift.read();
 			refreshOMCloudsXYZSIFT(object_clouds_xyzsift);
+			//is_fresh_om_xyzsift = true;
+			fresh_objects = true;
+    }//: if
+
+	// Read om XYZKAZE clouds from port.
+	if (!in_object_clouds_xyzkaze.empty()){
+			object_clouds_xyzkaze = in_object_clouds_xyzkaze.read();
+			refreshOMCloudsXYZKAZE(object_clouds_xyzkaze);
 			//is_fresh_om_xyzsift = true;
 			fresh_objects = true;
     }//: if
@@ -283,10 +313,15 @@ void CloudViewer::refreshViewerState() {
 			CLOG(LWARNING) << "Cannot display correspondences as scene_cloud_xyzsift is empty";
 		} else if (object_clouds_xyzsift.empty()) {
 			CLOG(LWARNING) << "Cannot display correspondences as om_clouds_xyzsift is empty";
-		} else if (!fresh_scene) {
-			CLOG(LWARNING) << "Cannot display correspondences as scene_cloud_xyzsift is old";
+		} else if (scene_cloud_xyzkaze->empty()) {
+			CLOG(LWARNING) << "Cannot display correspondences as scene_cloud_xyzkaze is empty";
+		} else if (object_clouds_xyzkaze.empty()) {
+			CLOG(LWARNING) << "Cannot display correspondences as om_clouds_xyzkaze is empty";
+		}
+		else if (!fresh_scene) {
+			CLOG(LWARNING) << "Cannot display correspondences as scene_cloud_xyzsift or kaze is old";
 		} else if (!fresh_objects) {
-			CLOG(LWARNING) << "Cannot display correspondences as om_clouds_xyzsift is old";
+			CLOG(LWARNING) << "Cannot display correspondences as om_clouds_xyzsift or kaze is old";
 		} else {
 				objects_scene_correspondences = in_objects_scene_correspondences.read();
 				if (objects_scene_correspondences.empty())
@@ -369,6 +404,34 @@ void CloudViewer::refreshSceneCloudXYZSIFT(pcl::PointCloud<PointXYZSIFT>::Ptr sc
 	}//: else
 }
 
+void CloudViewer::refreshSceneCloudXYZKAZE(pcl::PointCloud<PointXYZKAZE>::Ptr scene_cloud_xyzkaze_){
+	CLOG(LTRACE) << "refreshSceneCloudXYZKAZE";
+
+	if (!prop_display_scene_xyzkaze) {
+		viewer->removePointCloud ("scene_xyzkaze");
+	} else {
+		// Transform to XYZ cloud.
+		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_xyz(new pcl::PointCloud<pcl::PointXYZ>);
+		pcl::copyPointCloud(*scene_cloud_xyzkaze_, *cloud_xyz);
+
+		// Filter the NaN points.
+		std::vector<int> indices;
+		pcl::removeNaNFromPointCloud(*cloud_xyz, *cloud_xyz, indices);
+		cloud_xyz->is_dense = false;
+
+		// UPDATE: Display cloud only if required.
+		if (!viewer->updatePointCloud<pcl::PointXYZ> (cloud_xyz, "scene_xyzkaze"))
+			viewer->addPointCloud<pcl::PointXYZ> (cloud_xyz, "scene_xyzkaze");
+
+		// Set KAZE colours.
+		double r=0, g=255, b=0;
+		parseColor(prop_xyzkaze_color, r, g, b);
+
+		// Update KAZE cloud properties.
+		viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, prop_xyzkaze_size,"scene_xyzkaze");
+		viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, r, g, b, "scene_xyzkaze");
+	}//: else
+}
 
 void CloudViewer::refreshOMCloudsXYZRGB(std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> om_clouds_xyzrgb_) {
 	CLOG(LTRACE) << "refreshOMCloudsXYZRGB";
@@ -483,6 +546,72 @@ void CloudViewer::refreshOMCloudsXYZSIFT(std::vector<pcl::PointCloud<PointXYZSIF
 		}//: for
 
 		previous_om_xyzsift_size = om_clouds_xyzsift_.size();
+	}//: else
+
+}
+
+
+void CloudViewer::refreshOMCloudsXYZKAZE(std::vector<pcl::PointCloud<PointXYZKAZE>::Ptr> om_clouds_xyzkaze_) {
+	CLOG(LTRACE) << "refreshOMCloudsXYZKAZE";
+
+	if (!prop_display_objects_xyzkaze) {
+		// Remove object clouds
+		for(int i=0; i< previous_om_xyzkaze_size; i++) {
+			// cloud name.
+			std::ostringstream s;
+			s << i;
+			std::string cname = "xyzkaze_" + s.str();
+			viewer->removePointCloud (cname);
+		}//: for
+
+		previous_om_xyzkaze_size = 0;
+	} else {
+
+		// Generate colour vector for MAX of om clouds (sifts, corners, correspondences,names).
+		resizeColourVector(om_clouds_xyzkaze_.size());
+
+		// Update object clouds that need to be updated.
+		for(int i=0; i< om_clouds_xyzkaze_.size(); i++) {
+			// Generate cloud name.
+			std::ostringstream s;
+			s << i;
+			std::string cname = "xyzkaze_" + s.str();
+
+			// Transform to XYZ cloud.
+			pcl::PointCloud<pcl::PointXYZ>::Ptr tmp_cloud_xyz(new pcl::PointCloud<pcl::PointXYZ>);
+			pcl::copyPointCloud(*(om_clouds_xyzkaze_[i]), *tmp_cloud_xyz);
+
+			// Filter the NaN points.
+			std::vector<int> indices;
+			pcl::removeNaNFromPointCloud(*tmp_cloud_xyz, *tmp_cloud_xyz, indices);
+			tmp_cloud_xyz->is_dense = false;
+
+			// UPDATE: Display cloud only if required.
+			if (!viewer->updatePointCloud<pcl::PointXYZ> (tmp_cloud_xyz, cname))
+				viewer->addPointCloud<pcl::PointXYZ> (tmp_cloud_xyz, cname);
+
+			// Set SIFT colours.
+			double r= colours[i][0];
+			double g= colours[i][1];
+			double b= colours[i][2];
+
+			// Update SIFT cloud properties.
+			viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, prop_xyzkaze_size, cname);
+			viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, r, g, b, cname);
+
+		}//: for
+
+		// Remove unnecessary object clouds.
+		for(int i=om_clouds_xyzkaze_.size(); i< previous_om_xyzkaze_size; i++) {
+			// Generate cloud name.
+			std::ostringstream s;
+			s << i;
+			std::string cname = "xyzkaze_" + s.str();
+			// Remove object/model cloud.
+			viewer->removePointCloud (cname);
+		}//: for
+
+		previous_om_xyzkaze_size = om_clouds_xyzkaze_.size();
 	}//: else
 
 }

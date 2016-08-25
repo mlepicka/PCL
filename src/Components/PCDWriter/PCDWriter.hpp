@@ -16,6 +16,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <Types/PointXYZSIFT.hpp>
+#include <Types/PointXYZKAZE.hpp>
 
 namespace Processors {
 namespace PCDWriter {
@@ -79,6 +80,8 @@ protected:
 	/// Cloud containing points with Cartesian coordinates and SIFT descriptor (XYZ + 128).
 	Base::DataStreamIn<pcl::PointCloud<PointXYZSIFT>::Ptr, Base::DataStreamBuffer::Newest> in_cloud_xyzsift;
 
+	/// Cloud containing points with Cartesian coordinates and KAZE descriptor (XYZ + 128).
+	Base::DataStreamIn<pcl::PointCloud<PointXYZKAZE>::Ptr, Base::DataStreamBuffer::Newest> in_cloud_xyzkaze;
 
 	/// Flag indicating that the cloud should be saved to file.
 	bool save_cloud_flag;
@@ -96,6 +99,7 @@ protected:
 	void Write_xyz();
 	void Write_xyzrgb();
 	void Write_xyzsift();
+	void Write_xyzkaze();
 	
 	// Prepares filename.
 	std::string prepareName(std::string suffix_);
