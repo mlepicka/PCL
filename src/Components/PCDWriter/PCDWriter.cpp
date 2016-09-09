@@ -44,7 +44,7 @@ void PCDWriter::prepareInterface() {
 	registerStream("in_cloud_xyz", &in_cloud_xyz);
 	registerStream("in_cloud_xyzrgb", &in_cloud_xyzrgb);
 	registerStream("in_cloud_xyzsift", &in_cloud_xyzsift);
-	registerStream("in_cloud_xyzkaze", &in_cloud_xyzsift);
+	registerStream("in_cloud_xyzkaze", &in_cloud_xyzkaze);
 	registerStream("in_save_cloud_trigger", &in_save_cloud_trigger);
 
 	// Register handlers - save cloud, can be triggered manually (from GUI) or by new data present in trigger dataport.
