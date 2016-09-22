@@ -44,6 +44,7 @@ GaussCloud::GaussCloud(const std::string & name) :
 	registerProperty(prop_calc_path);
 	registerProperty(noisy_rgb);
 	registerProperty(noisy_xyz);
+	registerProperty(noisy_ratio);
 
 }
 
@@ -84,14 +85,14 @@ bool GaussCloud::onStart() {
 }
 
 void GaussCloud::make_noisy_in_rgb_cloud(pcl::PointCloud <pcl::PointXYZRGB>::Ptr& cloud_xyzrgb, std::ofstream& writer){
-	CLOG(LDEBUG)<<"in make_in_rgb_noisy_cloud" <<"\n";
-	int which_point_in = (int)(rand() / (RAND_MAX + 1.0) * 9);
+	CLOG(LDEBUG)<<"in make_in_rgb_noisy_cloud "<< 1.00/noisy_ratio <<"\n";
+	int which_point_in = (int)(rand() / (RAND_MAX + 1.0) * (1.00/noisy_ratio));
 	for(int index=0; index< cloud_xyzrgb->size(); index++){
-		if(index % (int)(noisy_ratio*100) == which_point_in){
+		if(index % (int)(1.00/noisy_ratio) == which_point_in){
 			float gauss_r, gauss_g, gauss_b;
-			gauss_r = GaussCloud::generateNumber(0, 10);
-			gauss_g = GaussCloud::generateNumber(0, 10);
-			gauss_b = GaussCloud::generateNumber(0, 10);
+			gauss_r = GaussCloud::generateNumber(0, 5);
+			gauss_g = GaussCloud::generateNumber(0, 5);
+			gauss_b = GaussCloud::generateNumber(0, 5);
 			
 			cloud_xyzrgb->at(index).r+=gauss_r;
 			cloud_xyzrgb->at(index).g+=gauss_g;
@@ -125,10 +126,10 @@ void GaussCloud::make_noisy_in_rgb_cloud(pcl::PointCloud <pcl::PointXYZRGB>::Ptr
 }
 
 template<typename T> void GaussCloud::make_noisy_in_xyz_cloud(const typename  pcl::PointCloud<T>::Ptr& cloud, std::ofstream& writer){
-	CLOG(LDEBUG)<<"in make_in_xyz_noisy_cloud" <<"\n";
-	int which_point_in = (int)(rand() / (RAND_MAX + 1.0) * 9);
+	CLOG(LDEBUG)<<"in make_in_xyz_noisy_cloud "<< 1.00/noisy_ratio <<"\n";
+	int which_point_in = (int)(rand() / (RAND_MAX + 1.0) * (1.00/noisy_ratio));
 	for(int index=0; index< cloud->size(); index++){
-		if(index % (int)(noisy_ratio*100) == which_point_in){
+		if(index % (int)(1.00/noisy_ratio) == which_point_in){
 			float gauss_x, gauss_y, gauss_z;
 			gauss_x = GaussCloud::generateNumber(0, 0.005);
 			gauss_y = GaussCloud::generateNumber(0, 0.005);
