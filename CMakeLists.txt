@@ -9,6 +9,10 @@ FIND_PACKAGE(DisCODe REQUIRED)
 
 # Use CMake macros provided with DisCODe
 set(CMAKE_MODULE_PATH ${DisCODe_DIR} ${CMAKE_MODULE_PATH})
+
+set (CMAKE_CXX_FLAGS "--std=gnu++11 ${CMAKE_CXX_FLAGS}")
+
+
 include(DisCODeMacros)
 
 # Set default install prefix to dist folder

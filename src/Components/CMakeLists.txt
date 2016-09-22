@@ -29,6 +29,8 @@ ADD_COMPONENT(StatisticalOutlierRemoval)
 
 ADD_COMPONENT(StatisticalOutlierCounter)
 
+ADD_COMPONENT(GaussCloud)
+
 ADD_COMPONENT(Clustering)
 
 ADD_COMPONENT(FindBoundingBox)
@@ -46,3 +48,5 @@ ADD_COMPONENT(CloudConverter)
 ADD_COMPONENT(MLSSmoothing)
 
 ADD_COMPONENT(PCDSequence)
+
+ADD_COMPONENT(CvGaussianNoise)
