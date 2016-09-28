@@ -92,6 +92,7 @@ protected:
 	Base::Property<bool> noisy_rgb;
 	Base::Property<bool> noisy_xyz;
 	Base::Property<float> noisy_ratio;
+	Base::Property<float> noisy_ratio_rgb;
 	///  Property - path to save calculation results
 	Base::Property<std::string> prop_calc_path;
 

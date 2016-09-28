@@ -13,7 +13,7 @@ include_directories(SYSTEM ${Boost_INCLUDE_DIR})
 # Find another necessary libraries
 
 # # OpenCV library
-# FIND_PACKAGE( OpenCV REQUIRED )
+FIND_PACKAGE( OpenCV REQUIRED )
 
 FIND_PACKAGE(PCL 1.7.0 REQUIRED)
 
@@ -26,10 +26,11 @@ include_directories(${PCL_INCLUDE_DIRS})
 
 DISCODE_FIND_DCL(PCLCoreTypes)
 DISCODE_FIND_DCL(CvCoreTypes)
+DISCODE_FIND_DCL(CvBasic)
 
 # Add standard libraries for this DCL: Boost & PCL
 MESSAGE(STATUS "${PCL_LIBRARIES}")
-SET(DisCODe_LIBRARIES ${DisCODe_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES} )
+SET(DisCODe_LIBRARIES ${DisCODe_LIBRARIES} ${Boost_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV_LIBRARIES})
 
 # Validate whether components are properly linked to utilized libraries.
 SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,defs") 

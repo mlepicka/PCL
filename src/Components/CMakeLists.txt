@@ -13,6 +13,8 @@ ADD_COMPONENT(RANSACPlane)
 
 ADD_COMPONENT(RANSACSphere)
 
+ADD_COMPONENT(FeatureCloudConverter)
+
 ADD_COMPONENT(SphereGenerator)
 
 ADD_COMPONENT(VoxelGrid)

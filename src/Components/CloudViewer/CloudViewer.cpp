@@ -28,6 +28,7 @@ CloudViewer::CloudViewer(const std::string & name) :
 	prop_background_color("background_color", std::string("0,0,0")),
 	prop_xyznormals_scale("xyznormals.scale", 0.1),
 	prop_xyznormals_level("xyznormals.level", 1),
+	prop_xyzrgb_size("xyzrgb.size", 1),
 	prop_xyzsift_size("xyzsift.size", 1),
 	prop_xyzsift_color("xyzsift.color", std::string("255,0,0")),
 	prop_xyzkaze_size("xyzkaze.size", 1),
@@ -64,6 +65,7 @@ CloudViewer::CloudViewer(const std::string & name) :
 	registerProperty(prop_display_scene_xyzrgb);
 	registerProperty(prop_display_scene_xyznormals);
 	registerProperty(prop_display_scene_xyzsift);
+	registerProperty(prop_display_scene_xyzkaze);
 	// Scene translation properties.
 	registerProperty(prop_scene_translation_x);
 	registerProperty(prop_scene_translation_y);
@@ -80,6 +82,8 @@ CloudViewer::CloudViewer(const std::string & name) :
 	registerProperty(prop_display_object_labels);
 	registerProperty(prop_display_objects_scene_correspondences);
 	registerProperty(prop_display_object_coordinate_systems);
+
+	registerProperty(prop_xyzrgb_size);
 
 	// XYZNormals properties.
 	registerProperty(prop_xyznormals_scale);
@@ -371,6 +375,8 @@ void CloudViewer::refreshSceneCloudXYZRGB(pcl::PointCloud<pcl::PointXYZRGB>::Ptr
 		// UPDATE: Display cloud only if required.
 		if (!viewer->updatePointCloud<pcl::PointXYZRGB> (tmp_cloud_xyzrgb, color_distribution, "scene_xyzrgb"))
 			viewer->addPointCloud<pcl::PointXYZRGB> (tmp_cloud_xyzrgb, color_distribution, "scene_xyzrgb");
+			
+		viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, prop_xyzrgb_size,"scene_xyzrgb");
 	}//: else
 }
 

@@ -241,6 +241,8 @@ protected:
 	/// Property: size of KAZE points. As default it is set to 1.
 	Base::Property<float> prop_xyzkaze_size;
 
+	Base::Property<float> prop_xyzrgb_size;
+
 	/// Property: size of object/model label.
 	Base::Property<float> prop_label_scale;
 
